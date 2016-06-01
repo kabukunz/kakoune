@@ -17,18 +17,18 @@ elseif (${CMAKE_CXX_COMPILER_ID} STREQUAL "MSVC")
 	endif()
 endif()
 
-
 set(Boost_USE_STATIC_LIBS OFF) 
 set(Boost_USE_MULTITHREADED ON)  
 set(Boost_USE_STATIC_RUNTIME OFF) 
 find_package(Boost 1.45.0 COMPONENTS regex) 
 
-find_package(Curses REQUIRED)
+set(CURSES_NEED_NCURSESW TRUE)
+find_package(NCursesw REQUIRED)
 
 include_directories("./src")
 file (GLOB kakoune_SOURCES src/*.cc)
 
 include_directories(${Boost_INCLUDE_DIRS} ${CURSES_INCLUDE_DIR})
-add_executable(kakoune ${kakoune_SOURCES})
-target_link_libraries(kakoune ${Boost_LIBRARIES} ${CURSES_LIBRARY})
-install(TARGETS kakoune RUNTIME DESTINATION ${BIN_DIR})
+add_executable(kak ${kakoune_SOURCES})
+target_link_libraries(kak ${Boost_LIBRARIES} ${CURSES_LIBRARY})
+install(TARGETS kak RUNTIME DESTINATION ${BIN_DIR})
