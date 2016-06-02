@@ -1,4 +1,6 @@
 #include <pybind11/pybind11.h>
+#include "ncurses_ui.hh"
+#include "ncurses.h"
 
 int add(int i, int j) {
     return i + j;
@@ -6,8 +8,8 @@ int add(int i, int j) {
 
 namespace py = pybind11;
 
-PYBIND11_PLUGIN(example) {
-    py::module m("example", "pybind11 example plugin");
+PYBIND11_PLUGIN(kakoune) {
+    py::module m("kakoune", "pybind11 example plugin");
 
     m.def("add", &add, "A function which adds two numbers");
 
