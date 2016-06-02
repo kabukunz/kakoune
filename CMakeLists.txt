@@ -29,11 +29,13 @@ find_package(NCursesw REQUIRED)
 include_directories("./src")
 file (GLOB kakoune_SOURCES src/*.cc)
 
+set(module_SOURCES src_module/main.cc)
+
 include_directories(${Boost_INCLUDE_DIRS} ${CURSES_INCLUDE_DIR})
 add_executable(kak ${kakoune_SOURCES})
 target_link_libraries(kak PRIVATE ${Boost_LIBRARIES} ${CURSES_LIBRARY})
 
 add_subdirectory(pybind11)
-pybind11_add_module(kakoune ${kakoune_SOURCES})
+pybind11_add_module(kakoune ${kakoune_SOURCES} ${module_SOURCES})
 
 install(TARGETS kak RUNTIME DESTINATION ${BIN_DIR})
