@@ -37,5 +37,6 @@ target_link_libraries(kak PRIVATE ${Boost_LIBRARIES} ${CURSES_LIBRARY})
 
 add_subdirectory(pybind11)
 pybind11_add_module(kakoune ${kakoune_SOURCES} ${module_SOURCES})
+target_link_libraries(kakoune PRIVATE ${Boost_LIBRARIES} ${CURSES_LIBRARY})
 
 install(TARGETS kak RUNTIME DESTINATION ${BIN_DIR})
