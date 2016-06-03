@@ -14,6 +14,10 @@ int add(int i, int j) {
 namespace py = pybind11;
 using namespace Kakoune;
 
+auto to_string(String s) {
+    return std::string(s.data());
+}
+
 PYBIND11_PLUGIN(kakoune) {
     py::module m("kakoune", "pybind11 example plugin");
 
@@ -27,15 +31,19 @@ PYBIND11_PLUGIN(kakoune) {
           },
           "kak's binary path");
 
-    m.def("list_files",
-          [](const char* filename) {
-              std::vector<std::string> files;
-              auto _files = Kakoune::list_files(filename);
-              std::transform(_files.begin(), _files.end(), files.begin(),
-                             [](String n) { return std::string(n.data()); });
-              return files;
-          },
-          "kak's binary path", py::return_value_policy::copy);
+    m.def(
+        "list_files",
+        [](const char* filename) {
+            std::vector<std::string> files;
+            auto _files = Kakoune::list_files(String(filename));
+            files.reserve(_files.size());
+            std::transform(
+                _files.begin(), _files.end(), std::back_inserter(files), [](String s) {
+                    return std::string(s.data());
+                });
+            return files;
+        },
+        "kak's binary path", py::return_value_policy::copy);
 
     py::class_<Buffer>(m, "Buffer").def("__init__", [](Buffer& b) {
         new (&b) Buffer("test", Buffer::Flags::None,

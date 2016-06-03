@@ -15,4 +15,4 @@ import kakoune
 
 print(kakoune.get_kak_binary_path())
 print(kakoune.parse_filename('$HOME/hi/world'))
-#print(kakoune.list_files('./'))
+print(kakoune.list_files('./'))
