@@ -11,14 +11,12 @@ int add(int i, int j) {
 namespace py = pybind11;
 
 PYBIND11_PLUGIN(kakoune) {
-
     py::module m("kakoune", "pybind11 example plugin");
 
     m.def("add", &add, "A function which adds two numbers");
-    m.def("get_kak_binary_path", []() {
-            std::string thing = std::string(reinterpret_cast<const char*>(Kakoune::get_kak_binary_path().data()));
-            return thing;
-    }, "A function which adds two numbers");
+    m.def("get_kak_binary_path",
+          []() { return std::string(Kakoune::get_kak_binary_path().data()); },
+          "kak's binary path");
 
     return m.ptr();
 }
