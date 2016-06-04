@@ -26,7 +26,6 @@ PYBIND11_PLUGIN(kakoune) {
               return std::string(Kakoune::parse_filename(filename).data());
           },
           "parse filename");
-
     m.def("list_files",
           [](const char* filename) {
               std::vector<std::string> files;
@@ -37,7 +36,7 @@ PYBIND11_PLUGIN(kakoune) {
                              [](String s) { return std::string(s.data()); });
               return files;
           },
-          "list files in a path", py::return_value_policy::copy);
+          "list files in a path");
 
     py::class_<Buffer>(m, "Buffer").def("__init__", [](Buffer& b) {
         new (&b) Buffer("test", Buffer::Flags::None,
