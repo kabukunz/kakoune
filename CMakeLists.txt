@@ -27,8 +27,10 @@ endif()
 set(Boost_USE_STATIC_LIBS OFF) 
 set(Boost_USE_MULTITHREADED ON)  
 set(Boost_USE_STATIC_RUNTIME OFF) 
+find_package(PythonInterp)
+find_package(PythonLibs)
 
-find_package(Boost 1.45.0 COMPONENTS regex) 
+find_package(Boost 1.45.0 COMPONENTS regex python) 
 
 set(CURSES_NEED_NCURSESW TRUE)
 find_package(NCursesw REQUIRED)
@@ -38,12 +40,11 @@ file (GLOB kakoune_SOURCES src/*.cc)
 
 set(module_SOURCES src_module/main.cc)
 
-include_directories(${Boost_INCLUDE_DIRS} ${CURSES_INCLUDE_DIR})
+include_directories(${Boost_INCLUDE_DIRS} ${CURSES_INCLUDE_DIR} ${PYTHON_INCLUDE_DIRS})
 add_executable(kak ${kakoune_SOURCES})
 target_link_libraries(kak PRIVATE ${Boost_LIBRARIES} ${CURSES_LIBRARY})
 
-add_subdirectory(pybind11)
-pybind11_add_module(kakoune ${kakoune_SOURCES} ${module_SOURCES})
-target_link_libraries(kakoune PRIVATE ${Boost_LIBRARIES} ${CURSES_LIBRARY})
+python_add_module(kakoune ${kakoune_SOURCES} ${module_SOURCES})
+target_link_libraries(kakoune PRIVATE ${Boost_LIBRARIES} ${CURSES_LIBRARY} ${PYTHON_LIBRARIES})
 
 install(TARGETS kak RUNTIME DESTINATION ${BIN_DIR})
