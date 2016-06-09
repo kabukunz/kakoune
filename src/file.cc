@@ -5,6 +5,7 @@
 #include <sys/mman.h>
 #include <fcntl.h>
 #include <dirent.h>
+#include <unistd.h>
 
 #if defined(__FreeBSD__)
 #include <sys/sysctl.h>

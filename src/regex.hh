@@ -5,7 +5,7 @@
 #include "exception.hh"
 #include "utf8_iterator.hh"
 
-#include <boost/regex.hpp>
+#include <regex>
 
 namespace Kakoune
 {
@@ -17,7 +17,7 @@ struct regex_error : runtime_error
     {}
 };
 
-using RegexBase = boost::basic_regex<wchar_t, boost::c_regex_traits<wchar_t>>;
+using RegexBase = std::basic_regex<wchar_t, std::regex_traits<wchar_t>>;
 
 // Regex that keeps track of its string representation
 struct Regex : RegexBase
@@ -39,19 +39,19 @@ template<typename It>
 using RegexUtf8It = utf8::iterator<It, wchar_t, ssize_t>;
 
 template<typename It>
-using RegexIteratorBase = boost::regex_iterator<RegexUtf8It<It>, wchar_t,
-                                                boost::c_regex_traits<wchar_t>>;
+using RegexIteratorBase = std::regex_iterator<RegexUtf8It<It>, wchar_t,
+                                                std::regex_traits<wchar_t>>;
 
-namespace RegexConstant = boost::regex_constants;
+namespace RegexConstant = std::regex_constants;
 
 template<typename Iterator>
-struct MatchResults : boost::match_results<RegexUtf8It<Iterator>>
+struct MatchResults : std::match_results<RegexUtf8It<Iterator>>
 {
-    using ParentType = boost::match_results<RegexUtf8It<Iterator>>;
+    using ParentType = std::match_results<RegexUtf8It<Iterator>>;
     struct SubMatch : std::pair<Iterator, Iterator>
     {
         SubMatch() = default;
-        SubMatch(const boost::sub_match<RegexUtf8It<Iterator>>& m)
+        SubMatch(const std::sub_match<RegexUtf8It<Iterator>>& m)
             : std::pair<Iterator, Iterator>{m.first.base(), m.second.base()},
               matched{m.matched}
         {}
@@ -59,9 +59,9 @@ struct MatchResults : boost::match_results<RegexUtf8It<Iterator>>
         bool matched = false;
     };
 
-    struct iterator : boost::match_results<RegexUtf8It<Iterator>>::iterator
+    struct iterator : std::match_results<RegexUtf8It<Iterator>>::iterator
     {
-        using ParentType = typename boost::match_results<RegexUtf8It<Iterator>>::iterator;
+        using ParentType = typename std::match_results<RegexUtf8It<Iterator>>::iterator;
         iterator(const ParentType& it) : ParentType(it) {}
 
         SubMatch operator*() const { return {ParentType::operator*()}; }
@@ -102,14 +102,14 @@ template<typename It>
 bool regex_match(It begin, It end, const Regex& re)
 {
     using Utf8It = RegexUtf8It<It>;
-    return boost::regex_match(Utf8It{begin, begin, end}, Utf8It{end, begin, end}, re);
+    return std::regex_match(Utf8It{begin, begin, end}, Utf8It{end, begin, end}, re);
 }
 
 template<typename It>
 bool regex_match(It begin, It end, MatchResults<It>& res, const Regex& re)
 {
     using Utf8It = RegexUtf8It<It>;
-    return boost::regex_match(Utf8It{begin, begin, end}, Utf8It{end, begin, end}, res, re);
+    return std::regex_match(Utf8It{begin, begin, end}, Utf8It{end, begin, end}, res, re);
 }
 
 template<typename It>
@@ -117,7 +117,7 @@ bool regex_search(It begin, It end, const Regex& re,
                   RegexConstant::match_flag_type flags = RegexConstant::match_default)
 {
     using Utf8It = RegexUtf8It<It>;
-    return boost::regex_search(Utf8It{begin, begin, end}, Utf8It{end, begin, end}, re);
+    return std::regex_search(Utf8It{begin, begin, end}, Utf8It{end, begin, end}, re);
 }
 
 template<typename It>
@@ -125,7 +125,7 @@ bool regex_search(It begin, It end, MatchResults<It>& res, const Regex& re,
                   RegexConstant::match_flag_type flags = RegexConstant::match_default)
 {
     using Utf8It = RegexUtf8It<It>;
-    return boost::regex_search(Utf8It{begin, begin, end}, Utf8It{end, begin, end}, res, re);
+    return std::regex_search(Utf8It{begin, begin, end}, Utf8It{end, begin, end}, res, re);
 }
 
 String option_to_string(const Regex& re);
