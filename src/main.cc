@@ -204,7 +204,7 @@ static void check_scrolloff(const CharCoord& so)
         throw runtime_error{"scroll offset must be positive or zero"};
 }
 
-void register_options()
+OptionsRegistry& register_options()
 {
     OptionsRegistry& reg = GlobalScope::instance().option_registry();
 
@@ -265,6 +265,7 @@ void register_options()
     reg.declare_option("modelinefmt", "format string used to generate the modeline",
                        "%val{bufname} %val{cursor_line}:%val{cursor_char_column} "_str);
     reg.declare_option("debug", "various debug flags", DebugFlags::None);
+    return reg;
 }
 
 struct convert_to_client_mode
@@ -503,8 +504,6 @@ int run_server(StringView session, StringView init_command,
 
     write_to_debug_buffer("*** This is the debug buffer, where debug info will be written ***");
 
-    // Server server(session.empty() ? to_string(getpid()) : session.str());
-
     bool startup_error = false;
     if (not ignore_kakrc) try
     {
@@ -590,13 +589,6 @@ int run_server(StringView session, StringView init_command,
 
                 ClientManager::instance().remove_client(*local_client, true);
                 convert_to_client_pending = false;
-
-                // if (fork_server_to_background())
-                // {
-                //     String session = server.session();
-                //     server.close_session(false);
-                //     throw convert_to_client_mode{ std::move(session), std::move(buffer_name) };
-                // }
             }
         }
     }
@@ -730,135 +722,34 @@ int main(int argc, char* argv[])
     for (size_t i = 1; i < argc; ++i)
         params.push_back(argv[i]);
 
-    const ParameterDesc param_desc{
-        SwitchMap{ { "c", { true,  "connect to given session" } },
-                   { "e", { true,  "execute argument on initialisation" } },
-                   { "n", { false, "do not source kakrc files on startup" } },
-                   { "s", { true,  "set session name" } },
-                   { "d", { false, "run as a headless session (requires -s)" } },
-                   { "p", { true,  "just send stdin as commands to the given session" } },
-                   { "f", { true,  "act as a filter, executing given keys on given files" } },
-                   { "q", { false, "in filter mode, be quiet about errors applying keys" } },
-                   { "ui", { true, "set the type of user interface to use (ncurses, dummy, or json)" } },
-                   { "l", { false, "list existing sessions" } },
-                   { "clear", { false, "clear dead sessions" } } }
-    };
     try
     {
         std::sort(keymap.begin(), keymap.end(),
                   [](const NormalCmdDesc& lhs, const NormalCmdDesc& rhs)
                   { return lhs.key < rhs.key; });
 
-        ParametersParser parser(params, param_desc);
+        auto init_command = StringView{};
+        auto ui_name = StringView{"ncurses"};
+        const UIType ui_type = parse_ui_type(ui_name);
+        bool daemon_mode = false;
+        auto session = StringView{"kak"};
+        ByteCoord target_coord;
+        Vector<StringView> files;
 
-        const bool list_sessions = (bool)parser.get_switch("l");
-        const bool clear_sessions = (bool)parser.get_switch("clear");
-        if (list_sessions or clear_sessions)
+        try
         {
-            StringView username = getpwuid(geteuid())->pw_name;
-            for (auto& session : list_files(format("/tmp/kakoune/{}/", username)))
-            {
-                const bool valid = check_session(session);
-                if (list_sessions)
-                    write_stdout(format("{}{}\n", session, valid ? "" : " (dead)"));
-                if (not valid and clear_sessions)
-                {
-                    char socket_file[128];
-                    format_to(socket_file, "/tmp/kakoune/{}/{}", username, session);
-                    unlink(socket_file);
-                }
-            }
-            return 0;
+            return run_server(session, init_command,
+                              true,  // no configs
+                              daemon_mode,  // don't send to bg as daemon
+                              ui_type, files, target_coord);
         }
-
-        if (auto session = parser.get_switch("p"))
+        catch (convert_to_client_mode& convert)
         {
-            for (auto opt : { "c", "n", "s", "d", "e" })
-            {
-                if (parser.get_switch(opt))
-                {
-                    write_stderr(format("error: -{} makes not sense with -p\n", opt));
-                    return -1;
-                }
-            }
-            return run_pipe(*session);
+            raise(SIGTSTP);
+            return run_client(convert.session,
+                              format("try %^buffer '{}'^; echo converted to client only mode",
+                                     escape(convert.buffer_name, "'^", '\\')), ui_type);
         }
-
-        auto init_command = parser.get_switch("e").value_or(StringView{});
-        const UIType ui_type = parse_ui_type(parser.get_switch("ui").value_or("ncurses"));
-
-        if (auto keys = parser.get_switch("f"))
-        {
-            Vector<StringView> files;
-            for (size_t i = 0; i < parser.positional_count(); ++i)
-                files.emplace_back(parser[i]);
-
-            return run_filter(*keys, init_command, files, (bool)parser.get_switch("q"));
-        }
-
-        if (auto server_session = parser.get_switch("c"))
-        {
-            for (auto opt : { "n", "s", "d" })
-            {
-                if (parser.get_switch(opt))
-                {
-                    write_stderr(format("error: -{} makes not sense with -c\n", opt));
-                    return -1;
-                }
-            }
-            String new_files;
-            for (auto name : parser)
-                new_files += format("edit '{}';", escape(real_path(name), "'", '\\'));
-
-            return run_client(*server_session, new_files + init_command, ui_type);
-        }
-        else
-        {
-            ByteCoord target_coord;
-            Vector<StringView> files;
-            for (auto& name : parser)
-            {
-                if (not name.empty() and name[0_byte] == '+')
-                {
-                    auto colon = find(name, ':');
-                    if (auto line = str_to_int_ifp({name.begin()+1, colon}))
-                    {
-                        target_coord.line = *line - 1;
-                        if (colon != name.end())
-                            target_coord.column = str_to_int_ifp({colon+1, name.end()}).value_or(1) - 1;
-
-                        continue;
-                    }
-                }
-
-                files.emplace_back(name);
-            }
-
-            StringView session = parser.get_switch("s").value_or(StringView{});
-            try
-            {
-                return run_server(session, init_command,
-                                  //(bool)parser.get_switch("n"),
-                                  true,
-                                  (bool)parser.get_switch("d"),
-                                  ui_type, files, target_coord);
-            }
-            catch (convert_to_client_mode& convert)
-            {
-                raise(SIGTSTP);
-                return run_client(convert.session,
-                                  format("try %^buffer '{}'^; echo converted to client only mode",
-                                         escape(convert.buffer_name, "'^", '\\')), ui_type);
-            }
-        }
-    }
-    catch (Kakoune::parameter_error& error)
-    {
-        write_stderr(format("Error while parsing parameters: {}\n"
-                            "Valid switches:\n"
-                            "{}", error.what(),
-                            generate_switches_doc(param_desc.switches)));
-       return -1;
     }
     catch (startup_error& error)
     {
