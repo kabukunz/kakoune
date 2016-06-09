@@ -20,7 +20,6 @@
 #include "ranked_match.hh"
 #include "register_manager.hh"
 #include "insert_completer.hh"
-#include "remote.hh"
 #include "shell_manager.hh"
 #include "string.hh"
 #include "window.hh"
@@ -1043,7 +1042,6 @@ const CommandDesc debug_cmd = {
         if (parser[0] == "info")
         {
             write_to_debug_buffer(format("pid: {}", getpid()));
-            write_to_debug_buffer(format("session: {}", Server::instance().session()));
         }
         else if (parser[0] == "buffers")
         {
