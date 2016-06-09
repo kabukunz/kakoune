@@ -4,8 +4,7 @@
 
 #include <typeinfo>
 
-namespace Kakoune
-{
+namespace Kakoune {
 
 StringView exception::what() const
 {

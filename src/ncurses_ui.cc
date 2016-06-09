@@ -2,13 +2,8 @@
 
 #include "containers.hh"
 #include "display_buffer.hh"
-#include "event_manager.hh"
 #include "file.hh"
 #include "keys.hh"
-#include "register_manager.hh"
-#include "utf8_iterator.hh"
-
-#include <algorithm>
 
 #define NCURSES_OPAQUE 0
 #define NCURSES_INTERNALS
@@ -16,10 +11,7 @@
 #include <ncurses.h>
 
 #include <fcntl.h>
-#include <signal.h>
 #include <sys/ioctl.h>
-#include <termios.h>
-#include <unistd.h>
 
 constexpr char control(char c) { return c & 037; }
 

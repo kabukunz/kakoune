@@ -1,12 +1,7 @@
 #include "buffer_manager.hh"
 
-#include "assert.hh"
-#include "buffer.hh"
 #include "client_manager.hh"
-#include "containers.hh"
-#include "exception.hh"
 #include "file.hh"
-#include "string.hh"
 
 namespace Kakoune
 {

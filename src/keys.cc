@@ -2,10 +2,8 @@
 
 #include "containers.hh"
 #include "exception.hh"
-#include "string.hh"
 #include "unit_tests.hh"
 #include "utf8_iterator.hh"
-#include "utils.hh"
 
 namespace Kakoune
 {

@@ -2,15 +2,12 @@
 
 #include "backtrace.hh"
 #include "buffer_utils.hh"
-#include "exception.hh"
 
 #if defined(__CYGWIN__)
 #include <windows.h>
 #endif
 
-#include <sys/types.h>
 #include <unistd.h>
-#include <stdlib.h>
 
 namespace Kakoune
 {

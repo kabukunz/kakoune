@@ -3,8 +3,7 @@
 #include "array_view.hh"
 #include "assert.hh"
 
-namespace Kakoune
-{
+namespace Kakoune {
 
 void KeymapManager::map_key(Key key, KeymapMode mode, KeyList mapping)
 {

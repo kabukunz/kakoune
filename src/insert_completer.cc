@@ -3,14 +3,10 @@
 #include "buffer_manager.hh"
 #include "buffer_utils.hh"
 #include "client.hh"
-#include "context.hh"
-#include "display_buffer.hh"
 #include "face_registry.hh"
 #include "file.hh"
-#include "regex.hh"
 #include "window.hh"
 #include "word_db.hh"
-#include "utf8_iterator.hh"
 
 #include <numeric>
 

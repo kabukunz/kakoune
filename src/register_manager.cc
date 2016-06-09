@@ -1,6 +1,5 @@
 #include "register_manager.hh"
 
-#include "assert.hh"
 #include "id_map.hh"
 
 namespace Kakoune

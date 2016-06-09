@@ -1,7 +1,6 @@
 #include "command_manager.hh"
 
 #include "alias_registry.hh"
-#include "assert.hh"
 #include "context.hh"
 #include "register_manager.hh"
 #include "shell_manager.hh"

@@ -1,15 +1,10 @@
 #include "buffer.hh"
 
-#include "assert.hh"
 #include "buffer_manager.hh"
 #include "client.hh"
-#include "containers.hh"
-#include "context.hh"
 #include "diff.hh"
 #include "file.hh"
-#include "shared_string.hh"
 #include "unit_tests.hh"
-#include "utils.hh"
 #include "window.hh"
 
 #include <algorithm>

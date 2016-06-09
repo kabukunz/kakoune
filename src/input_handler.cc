@@ -1,16 +1,12 @@
 #include "input_handler.hh"
 
-#include "buffer_manager.hh"
 #include "buffer_utils.hh"
 #include "client.hh"
 #include "event_manager.hh"
 #include "face_registry.hh"
 #include "insert_completer.hh"
-#include "normal.hh"
 #include "regex.hh"
 #include "register_manager.hh"
-#include "unordered_map.hh"
-#include "utf8.hh"
 #include "window.hh"
 
 namespace Kakoune

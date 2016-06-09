@@ -1,14 +1,12 @@
 #include "client.hh"
 
 #include "face_registry.hh"
-#include "context.hh"
 #include "buffer_manager.hh"
 #include "buffer_utils.hh"
 #include "file.hh"
 #include "client_manager.hh"
 #include "command_manager.hh"
 #include "event_manager.hh"
-#include "user_interface.hh"
 #include "window.hh"
 
 #include <signal.h>
