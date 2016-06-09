@@ -3,13 +3,8 @@
 #include "display_buffer.hh"
 #include "keys.hh"
 #include "file.hh"
-#include "event_manager.hh"
 #include "value.hh"
 #include "unit_tests.hh"
-
-#include <utility>
-
-#include <unistd.h>
 
 namespace Kakoune {
 

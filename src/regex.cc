@@ -1,7 +1,5 @@
 #include "regex.hh"
 
-#include "exception.hh"
-
 namespace Kakoune {
 
 using Utf8It = RegexUtf8It<const char*>;

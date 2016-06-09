@@ -1,6 +1,5 @@
 #include "selection.hh"
 
-#include "utf8.hh"
 #include "buffer_utils.hh"
 
 namespace Kakoune {

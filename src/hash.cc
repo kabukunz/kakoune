@@ -1,7 +1,5 @@
 #include "hash.hh"
 
-#include <cstdint>
-
 namespace Kakoune {
 
 [[gnu::always_inline]] static inline uint32_t rotl(uint32_t x, int8_t r) {

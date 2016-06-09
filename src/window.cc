@@ -1,15 +1,7 @@
 #include "window.hh"
 
-#include "assert.hh"
-#include "context.hh"
-#include "highlighter.hh"
-#include "hook_manager.hh"
-#include "input_handler.hh"
-#include "client.hh"
 #include "buffer_utils.hh"
 
-#include <algorithm>
-#include <chrono>
 #include <sstream>
 
 namespace Kakoune {

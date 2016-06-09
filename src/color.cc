@@ -4,8 +4,6 @@
 #include "exception.hh"
 #include "regex.hh"
 
-#include <cstdio>
-
 namespace Kakoune {
 
 static constexpr const char* color_names[] = {

@@ -7,8 +7,6 @@
 #include "face_registry.hh"
 #include "regex.hh"
 
-#include <chrono>
-
 namespace Kakoune {
 
 void HookManager::add_hook(StringView hook_name, String group, HookFunc hook) {

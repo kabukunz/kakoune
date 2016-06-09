@@ -1,25 +1,14 @@
 #include "highlighters.hh"
 
-#include "assert.hh"
 #include "buffer_utils.hh"
 #include "context.hh"
-#include "containers.hh"
 #include "command_manager.hh"
-#include "display_buffer.hh"
 #include "face_registry.hh"
 #include "highlighter_group.hh"
 #include "line_modification.hh"
-#include "option_types.hh"
-#include "parameters_parser.hh"
 #include "register_manager.hh"
 #include "regex.hh"
-#include "string.hh"
 #include "window.hh"
-#include "utf8.hh"
-#include "utf8_iterator.hh"
-
-#include <locale>
-#include <cstdio>
 
 namespace Kakoune {
 

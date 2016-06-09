@@ -1,10 +1,6 @@
 #include "selectors.hh"
 
-#include "optional.hh"
-#include "string.hh"
 #include "unit_tests.hh"
-
-#include <algorithm>
 
 namespace Kakoune {
 

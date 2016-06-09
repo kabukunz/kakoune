@@ -1,18 +1,10 @@
 #include "file.hh"
 
-#include "assert.hh"
 #include "buffer.hh"
-#include "unicode.hh"
-#include "ranked_match.hh"
-#include "regex.hh"
-#include "string.hh"
 
-#include <errno.h>
 #include <sys/mman.h>
 #include <fcntl.h>
-#include <unistd.h>
 #include <dirent.h>
-#include <stdlib.h>
 
 #if defined(__FreeBSD__)
 #include <sys/sysctl.h>

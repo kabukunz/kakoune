@@ -1,7 +1,5 @@
 #include "option_manager.hh"
 
-#include "assert.hh"
-
 namespace Kakoune {
 
 OptionDesc::OptionDesc(String name, String docstring, OptionFlags flags)

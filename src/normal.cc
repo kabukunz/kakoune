@@ -5,17 +5,10 @@
 #include "buffer_utils.hh"
 #include "client_manager.hh"
 #include "command_manager.hh"
-#include "commands.hh"
-#include "containers.hh"
-#include "context.hh"
 #include "face_registry.hh"
 #include "file.hh"
-#include "flags.hh"
-#include "option_manager.hh"
 #include "register_manager.hh"
 #include "selectors.hh"
-#include "shell_manager.hh"
-#include "string.hh"
 #include "window.hh"
 
 namespace Kakoune {

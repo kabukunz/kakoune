@@ -5,14 +5,6 @@
 #include "event_manager.hh"
 #include "file.hh"
 
-#include <chrono>
-
-#include <cstring>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <unistd.h>
-#include <stdlib.h>
-
 extern char** environ;
 
 namespace Kakoune {

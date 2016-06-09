@@ -1,6 +1,5 @@
 #include "word_db.hh"
 
-#include "utils.hh"
 #include "line_modification.hh"
 #include "utf8_iterator.hh"
 #include "unit_tests.hh"

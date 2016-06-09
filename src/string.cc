@@ -5,8 +5,6 @@
 #include "utf8_iterator.hh"
 #include "unit_tests.hh"
 
-#include <cstdio>
-
 namespace Kakoune {
 
 String::Data::Data(const char* data, size_t size, size_t capacity) {

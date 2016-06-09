@@ -1,6 +1,5 @@
 #include "context.hh"
 
-#include "alias_registry.hh"
 #include "client.hh"
 #include "register_manager.hh"
 #include "window.hh"

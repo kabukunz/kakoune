@@ -5,30 +5,18 @@
 #include "client_manager.hh"
 #include "command_manager.hh"
 #include "commands.hh"
-#include "containers.hh"
-#include "context.hh"
 #include "event_manager.hh"
 #include "face_registry.hh"
 #include "file.hh"
 #include "highlighters.hh"
 #include "insert_completer.hh"
-#include "shared_string.hh"
 #include "ncurses_ui.hh"
 #include "json_ui.hh"
-#include "parameters_parser.hh"
 #include "register_manager.hh"
-#include "scope.hh"
-#include "shell_manager.hh"
-#include "string.hh"
 #include "unit_tests.hh"
 #include "window.hh"
 
 #include <fcntl.h>
-#include <locale>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <unistd.h>
-#include <pwd.h>
 
 using namespace Kakoune;
 

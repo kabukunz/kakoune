@@ -1,8 +1,6 @@
 #include "display_buffer.hh"
 
-#include "assert.hh"
 #include "buffer.hh"
-#include "utf8.hh"
 
 #include "face_registry.hh"
 
