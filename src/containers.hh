@@ -29,7 +29,7 @@ struct ReverseView {
 };
 
 template <typename C>
-using RemoveReference = typename std::remove_reference<C>::type;
+using RemoveReference = std::remove_reference_t<C>;
 
 struct ReverseFactory {
   template <typename Container>
