@@ -263,12 +263,6 @@ OptionsRegistry& register_options()
     return reg;
 }
 
-struct convert_to_client_mode
-{
-    String session;
-    String buffer_name;
-};
-
 enum class UIType
 {
     NCurses,
@@ -278,7 +272,6 @@ enum class UIType
 
 static Client* local_client = nullptr;
 static UserInterface* local_ui = nullptr;
-static bool convert_to_client_pending = false;
 
 
 std::unique_ptr<UserInterface> make_ui(UIType ui_type)
@@ -346,8 +339,6 @@ std::unique_ptr<UserInterface> create_local_ui(UIType ui_type)
 
                     set_signal_handler(SIGTSTP, current);
                 }
-                else
-                    convert_to_client_pending = true;
            });
         }
 
@@ -532,14 +523,6 @@ int run_server(StringView session, StringView init_command,
             client_manager.clear_window_trash();
             buffer_manager.clear_buffer_trash();
             string_registry.purge_unused();
-
-            if (convert_to_client_pending)
-            {
-                String buffer_name = local_client->context().buffer().name();
-
-                ClientManager::instance().remove_client(*local_client, true);
-                convert_to_client_pending = false;
-            }
         }
     }
     catch (const kill_session&) {}
