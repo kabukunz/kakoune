@@ -141,7 +141,7 @@ DisplayLine Client::generate_mode_line() const
     modeline.push_back({ " " });
     for (auto& atom : m_input_handler.mode_line())
         modeline.push_back(std::move(atom));
-    modeline.push_back({ format(" - {}@[{}]", context().name(), Server::instance().session()) });
+    modeline.push_back({ format(" - {}", context().name()) });
 
     return modeline;
 }
