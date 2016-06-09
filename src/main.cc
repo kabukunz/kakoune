@@ -503,7 +503,7 @@ int run_server(StringView session, StringView init_command,
 
     write_to_debug_buffer("*** This is the debug buffer, where debug info will be written ***");
 
-    Server server(session.empty() ? to_string(getpid()) : session.str());
+    // Server server(session.empty() ? to_string(getpid()) : session.str());
 
     bool startup_error = false;
     if (not ignore_kakrc) try
@@ -591,12 +591,12 @@ int run_server(StringView session, StringView init_command,
                 ClientManager::instance().remove_client(*local_client, true);
                 convert_to_client_pending = false;
 
-                if (fork_server_to_background())
-                {
-                    String session = server.session();
-                    server.close_session(false);
-                    throw convert_to_client_mode{ std::move(session), std::move(buffer_name) };
-                }
+                // if (fork_server_to_background())
+                // {
+                //     String session = server.session();
+                //     server.close_session(false);
+                //     throw convert_to_client_mode{ std::move(session), std::move(buffer_name) };
+                // }
             }
         }
     }
@@ -839,7 +839,8 @@ int main(int argc, char* argv[])
             try
             {
                 return run_server(session, init_command,
-                                  (bool)parser.get_switch("n"),
+                                  //(bool)parser.get_switch("n"),
+                                  true,
                                   (bool)parser.get_switch("d"),
                                   ui_type, files, target_coord);
             }
