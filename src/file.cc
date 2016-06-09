@@ -47,6 +47,7 @@ String parse_filename(StringView filename)
 
             pos = end;
         }
+
     }
     if (pos != filename.length())
         result += filename.substr(pos);

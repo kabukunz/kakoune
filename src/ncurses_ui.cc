@@ -12,6 +12,7 @@
 
 #include <fcntl.h>
 #include <sys/ioctl.h>
+#include <unistd.h>
 
 constexpr char control(char c) { return c & 037; }
 
