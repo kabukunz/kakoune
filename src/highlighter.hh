@@ -67,7 +67,7 @@ struct SimpleHighlighter : public Highlighter {
 
 template <typename T>
 std::unique_ptr<SimpleHighlighter<T>> make_simple_highlighter(T func) {
-  return make_unique<SimpleHighlighter<T>>(std::move(func));
+  return std::make_unique<SimpleHighlighter<T>>(std::move(func));
 }
 
 using HighlighterParameters = ConstArrayView<String>;

@@ -63,7 +63,7 @@ class DynamicRegister : public StaticRegister {
 
 template <typename Func>
 std::unique_ptr<Register> make_dyn_reg(Func func) {
-  return make_unique<DynamicRegister<Func>>(std::move(func));
+  return std::make_unique<DynamicRegister<Func>>(std::move(func));
 }
 
 class NullRegister : public Register {
