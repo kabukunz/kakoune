@@ -5,33 +5,28 @@
 #include "completion.hh"
 #include "safe_ptr.hh"
 
-namespace Kakoune
-{
+namespace Kakoune {
 
 class Context;
-using HookFunc = std::function<void (StringView, Context&)>;
+using HookFunc = std::function<void(StringView, Context&)>;
 
-class HookManager : public SafeCountable
-{
-public:
-    HookManager(HookManager& parent) : m_parent(&parent) {}
+class HookManager : public SafeCountable {
+ public:
+  HookManager(HookManager& parent) : m_parent(&parent) {}
 
-    void add_hook(StringView hook_name, String group, HookFunc hook);
-    void remove_hooks(StringView group);
-    CandidateList complete_hook_group(StringView prefix, ByteCount pos_in_token);
-    void run_hook(StringView hook_name, StringView param,
-                  Context& context) const;
+  void add_hook(StringView hook_name, String group, HookFunc hook);
+  void remove_hooks(StringView group);
+  CandidateList complete_hook_group(StringView prefix, ByteCount pos_in_token);
+  void run_hook(StringView hook_name, StringView param, Context& context) const;
 
-private:
-    HookManager()
-        : m_parent(nullptr) {}
-    // the only one allowed to construct a root hook manager
-    friend class Scope;
+ private:
+  HookManager() : m_parent(nullptr) {}
+  // the only one allowed to construct a root hook manager
+  friend class Scope;
 
-    SafePtr<HookManager> m_parent;
-    IdMap<IdMap<HookFunc, MemoryDomain::Hooks>, MemoryDomain::Hooks> m_hook;
+  SafePtr<HookManager> m_parent;
+  IdMap<IdMap<HookFunc, MemoryDomain::Hooks>, MemoryDomain::Hooks> m_hook;
 };
-
 }
 
-#endif // hook_manager_hh_INCLUDED
+#endif  // hook_manager_hh_INCLUDED

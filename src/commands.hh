@@ -1,13 +1,11 @@
 #ifndef commands_hh_INCLUDED
 #define commands_hh_INCLUDED
 
-namespace Kakoune
-{
+namespace Kakoune {
 
 void register_commands();
 
 struct kill_session {};
-
 }
 
-#endif // commands_hh_INCLUDED
+#endif  // commands_hh_INCLUDED

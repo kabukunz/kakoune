@@ -5,60 +5,61 @@
 #include "event_manager.hh"
 #include "coord.hh"
 
-namespace Kakoune
-{
+namespace Kakoune {
 
 struct Value;
 
-class JsonUI : public UserInterface
-{
-public:
-    JsonUI();
+class JsonUI : public UserInterface {
+ public:
+  JsonUI();
 
-    JsonUI(const JsonUI&) = delete;
-    JsonUI& operator=(const JsonUI&) = delete;
+  JsonUI(const JsonUI&) = delete;
+  JsonUI& operator=(const JsonUI&) = delete;
 
-    void draw(const DisplayBuffer& display_buffer,
-              const Face& default_face,
-              const Face& buffer_padding) override;
+  void draw(const DisplayBuffer& display_buffer,
+            const Face& default_face,
+            const Face& buffer_padding) override;
 
-    void draw_status(const DisplayLine& status_line,
-                     const DisplayLine& mode_line,
-                     const Face& default_face) override;
+  void draw_status(const DisplayLine& status_line,
+                   const DisplayLine& mode_line,
+                   const Face& default_face) override;
 
-    bool is_key_available() override;
-    Key  get_key() override;
+  bool is_key_available() override;
+  Key get_key() override;
 
-    void menu_show(ConstArrayView<DisplayLine> items,
-                   CharCoord anchor, Face fg, Face bg,
-                   MenuStyle style) override;
-    void menu_select(int selected) override;
-    void menu_hide() override;
+  void menu_show(ConstArrayView<DisplayLine> items,
+                 CharCoord anchor,
+                 Face fg,
+                 Face bg,
+                 MenuStyle style) override;
+  void menu_select(int selected) override;
+  void menu_hide() override;
 
-    void info_show(StringView title, StringView content,
-                   CharCoord anchor, Face face,
-                   InfoStyle style) override;
-    void info_hide() override;
+  void info_show(StringView title,
+                 StringView content,
+                 CharCoord anchor,
+                 Face face,
+                 InfoStyle style) override;
+  void info_hide() override;
 
-    void refresh(bool force) override;
+  void refresh(bool force) override;
 
-    void set_input_callback(InputCallback callback) override;
+  void set_input_callback(InputCallback callback) override;
 
-    void set_ui_options(const Options& options) override;
+  void set_ui_options(const Options& options) override;
 
-    CharCoord dimensions() override;
+  CharCoord dimensions() override;
 
-private:
-    void parse_requests(EventMode mode);
-    void eval_json(const Value& value);
+ private:
+  void parse_requests(EventMode mode);
+  void eval_json(const Value& value);
 
-    InputCallback m_input_callback;
-    FDWatcher m_stdin_watcher;
-    Vector<Key> m_pending_keys;
-    CharCoord m_dimensions;
-    String m_requests;
+  InputCallback m_input_callback;
+  FDWatcher m_stdin_watcher;
+  Vector<Key> m_pending_keys;
+  CharCoord m_dimensions;
+  String m_requests;
 };
-
 }
 
-#endif // json_ui_hh_INCLUDED
+#endif  // json_ui_hh_INCLUDED

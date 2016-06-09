@@ -8,130 +8,130 @@
 #include "array_view.hh"
 #include "unordered_map.hh"
 
-namespace Kakoune
-{
+namespace Kakoune {
 
 struct NCursesWin;
 
-class NCursesUI : public UserInterface
-{
-public:
-    NCursesUI();
-    ~NCursesUI();
+class NCursesUI : public UserInterface {
+ public:
+  NCursesUI();
+  ~NCursesUI();
 
-    NCursesUI(const NCursesUI&) = delete;
-    NCursesUI& operator=(const NCursesUI&) = delete;
+  NCursesUI(const NCursesUI&) = delete;
+  NCursesUI& operator=(const NCursesUI&) = delete;
 
-    void draw(const DisplayBuffer& display_buffer,
-              const Face& default_face,
-              const Face& padding_face) override;
+  void draw(const DisplayBuffer& display_buffer,
+            const Face& default_face,
+            const Face& padding_face) override;
 
-    void draw_status(const DisplayLine& status_line,
-                     const DisplayLine& mode_line,
-                     const Face& default_face) override;
+  void draw_status(const DisplayLine& status_line,
+                   const DisplayLine& mode_line,
+                   const Face& default_face) override;
 
-    bool is_key_available() override;
-    Key  get_key() override;
+  bool is_key_available() override;
+  Key get_key() override;
 
-    void menu_show(ConstArrayView<DisplayLine> items,
-                   CharCoord anchor, Face fg, Face bg,
-                   MenuStyle style) override;
-    void menu_select(int selected) override;
-    void menu_hide() override;
+  void menu_show(ConstArrayView<DisplayLine> items,
+                 CharCoord anchor,
+                 Face fg,
+                 Face bg,
+                 MenuStyle style) override;
+  void menu_select(int selected) override;
+  void menu_hide() override;
 
-    void info_show(StringView title, StringView content,
-                   CharCoord anchor, Face face,
-                   InfoStyle style) override;
-    void info_hide() override;
+  void info_show(StringView title,
+                 StringView content,
+                 CharCoord anchor,
+                 Face face,
+                 InfoStyle style) override;
+  void info_hide() override;
 
-    void refresh(bool force) override;
+  void refresh(bool force) override;
 
-    void set_input_callback(InputCallback callback) override;
+  void set_input_callback(InputCallback callback) override;
 
-    void set_ui_options(const Options& options) override;
+  void set_ui_options(const Options& options) override;
 
-    CharCoord dimensions() override;
+  CharCoord dimensions() override;
 
-    static void abort();
+  static void abort();
 
-    struct Rect
-    {
-        CharCoord pos;
-        CharCoord size;
-    };
-private:
-    void check_resize(bool force = false);
-    void redraw();
+  struct Rect {
+    CharCoord pos;
+    CharCoord size;
+  };
 
-    int get_color(Color color);
-    int get_color_pair(const Face& face);
-    void set_face(NCursesWin* window, Face face, const Face& default_face);
-    void draw_line(NCursesWin* window, const DisplayLine& line,
-                   CharCount col_index, CharCount max_column,
-                   const Face& default_face);
+ private:
+  void check_resize(bool force = false);
+  void redraw();
 
-    NCursesWin* m_window = nullptr;
+  int get_color(Color color);
+  int get_color_pair(const Face& face);
+  void set_face(NCursesWin* window, Face face, const Face& default_face);
+  void draw_line(NCursesWin* window,
+                 const DisplayLine& line,
+                 CharCount col_index,
+                 CharCount max_column,
+                 const Face& default_face);
 
-    CharCoord m_dimensions;
+  NCursesWin* m_window = nullptr;
 
-    using ColorPair = std::pair<Color, Color>;
-    UnorderedMap<Color, int, MemoryDomain::Faces> m_colors;
-    UnorderedMap<ColorPair, int, MemoryDomain::Faces> m_colorpairs;
-    int m_next_color = 16;
+  CharCoord m_dimensions;
 
-    struct Window : Rect
-    {
-        void create(const CharCoord& pos, const CharCoord& size);
-        void destroy();
-        void refresh();
+  using ColorPair = std::pair<Color, Color>;
+  UnorderedMap<Color, int, MemoryDomain::Faces> m_colors;
+  UnorderedMap<ColorPair, int, MemoryDomain::Faces> m_colorpairs;
+  int m_next_color = 16;
 
-        explicit operator bool() const { return win; }
+  struct Window : Rect {
+    void create(const CharCoord& pos, const CharCoord& size);
+    void destroy();
+    void refresh();
 
-        NCursesWin* win = nullptr;
-    };
+    explicit operator bool() const { return win; }
 
-    void mark_dirty(const Window& win);
+    NCursesWin* win = nullptr;
+  };
 
-    struct Menu : Window
-    {
-        Vector<DisplayLine> items;
-        Face fg;
-        Face bg;
-        CharCoord anchor;
-        MenuStyle style;
-        int selected_item = 0;
-        int columns = 1;
-        LineCount top_line = 0;
-    } m_menu;
+  void mark_dirty(const Window& win);
 
-    void draw_menu();
+  struct Menu : Window {
+    Vector<DisplayLine> items;
+    Face fg;
+    Face bg;
+    CharCoord anchor;
+    MenuStyle style;
+    int selected_item = 0;
+    int columns = 1;
+    LineCount top_line = 0;
+  } m_menu;
 
-    struct Info : Window
-    {
-        String title;
-        String content;
-        Face face;
-        CharCoord anchor;
-        InfoStyle style;
-    } m_info;
+  void draw_menu();
 
-    FDWatcher     m_stdin_watcher;
-    InputCallback m_input_callback;
+  struct Info : Window {
+    String title;
+    String content;
+    Face face;
+    CharCoord anchor;
+    InfoStyle style;
+  } m_info;
 
-    bool m_status_on_top = false;
-    ConstArrayView<StringView> m_assistant;
+  FDWatcher m_stdin_watcher;
+  InputCallback m_input_callback;
 
-    void enable_mouse(bool enabled);
+  bool m_status_on_top = false;
+  ConstArrayView<StringView> m_assistant;
 
-    bool m_mouse_enabled = false;
-    int m_wheel_up_button = 4;
-    int m_wheel_down_button = 5;
+  void enable_mouse(bool enabled);
 
-    bool m_set_title = true;
+  bool m_mouse_enabled = false;
+  int m_wheel_up_button = 4;
+  int m_wheel_down_button = 5;
 
-    bool m_dirty = false;
+  bool m_set_title = true;
+
+  bool m_dirty = false;
 };
-
 }
 
-#endif // ncurses_hh_INCLUDED
+#endif  // ncurses_hh_INCLUDED

@@ -9,21 +9,17 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-namespace Kakoune
-{
+namespace Kakoune {
 
-struct file_access_error : runtime_error
-{
-public:
-    file_access_error(StringView filename,
-                      StringView error_desc)
-        : runtime_error(format("{}: {}", filename, error_desc)) {}
+struct file_access_error : runtime_error {
+ public:
+  file_access_error(StringView filename, StringView error_desc)
+      : runtime_error(format("{}: {}", filename, error_desc)) {}
 };
 
-struct file_not_found : file_access_error
-{
-    file_not_found(StringView filename)
-        : file_access_error(filename, "file not found") {}
+struct file_not_found : file_access_error {
+  file_not_found(StringView filename)
+      : file_access_error(filename, "file not found") {}
 };
 
 class Buffer;
@@ -43,20 +39,22 @@ String get_kak_binary_path();
 String read_fd(int fd, bool text = false);
 String read_file(StringView filename, bool text = false);
 void write(int fd, StringView data);
-inline void write_stdout(StringView str) { write(1, str); }
-inline void write_stderr(StringView str) { write(2, str); }
+inline void write_stdout(StringView str) {
+  write(1, str);
+}
+inline void write_stderr(StringView str) {
+  write(2, str);
+}
 
+struct MappedFile {
+  MappedFile(StringView filename);
+  ~MappedFile();
 
-struct MappedFile
-{
-    MappedFile(StringView filename);
-    ~MappedFile();
+  operator StringView() const { return {data, (int)st.st_size}; }
 
-    operator StringView() const { return { data, (int)st.st_size }; }
-
-    int fd;
-    const char* data;
-    struct stat st {};
+  int fd;
+  const char* data;
+  struct stat st {};
 };
 
 void write_buffer_to_file(Buffer& buffer, StringView filename);
@@ -72,21 +70,20 @@ void make_directory(StringView dir);
 
 timespec get_fs_timestamp(StringView filename);
 
-constexpr bool operator==(const timespec& lhs, const timespec& rhs)
-{
-    return lhs.tv_sec == rhs.tv_sec and lhs.tv_nsec == rhs.tv_nsec;
+constexpr bool operator==(const timespec& lhs, const timespec& rhs) {
+  return lhs.tv_sec == rhs.tv_sec and lhs.tv_nsec == rhs.tv_nsec;
 }
 
-constexpr bool operator!=(const timespec& lhs, const timespec& rhs)
-{
-    return not (lhs == rhs);
+constexpr bool operator!=(const timespec& lhs, const timespec& rhs) {
+  return not(lhs == rhs);
 }
 
-CandidateList complete_filename(StringView prefix, const Regex& ignore_regex,
-                                ByteCount cursor_pos = -1, bool only_dir = false);
+CandidateList complete_filename(StringView prefix,
+                                const Regex& ignore_regex,
+                                ByteCount cursor_pos = -1,
+                                bool only_dir = false);
 
 CandidateList complete_command(StringView prefix, ByteCount cursor_pos = -1);
-
 }
 
-#endif // file_hh_INCLUDED
+#endif  // file_hh_INCLUDED
