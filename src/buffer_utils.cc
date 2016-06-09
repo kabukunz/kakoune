@@ -4,6 +4,8 @@
 #include "event_manager.hh"
 #include "file.hh"
 
+#include <unistd.h>
+
 #if defined(__APPLE__)
 #define st_mtim st_mtimespec
 #endif

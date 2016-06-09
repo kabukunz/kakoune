@@ -17,6 +17,7 @@
 #include "window.hh"
 
 #include <fcntl.h>
+#include <unistd.h>
 
 using namespace Kakoune;
 

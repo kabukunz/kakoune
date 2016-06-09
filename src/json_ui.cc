@@ -6,6 +6,8 @@
 #include "value.hh"
 #include "unit_tests.hh"
 
+#include <unistd.h>
+
 namespace Kakoune {
 
 template <typename T>

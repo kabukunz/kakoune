@@ -21,6 +21,8 @@
 #include <storage/Path.h>
 #endif
 
+#include <unistd.h>
+
 namespace Kakoune {
 
 String parse_filename(StringView filename) {

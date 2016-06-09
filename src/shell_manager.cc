@@ -5,6 +5,8 @@
 #include "event_manager.hh"
 #include "file.hh"
 
+#include <unistd.h>
+
 extern char** environ;
 
 namespace Kakoune {

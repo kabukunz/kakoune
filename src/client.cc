@@ -9,6 +9,8 @@
 #include "event_manager.hh"
 #include "window.hh"
 
+#include <unistd.h>
+
 namespace Kakoune {
 
 Client::Client(std::unique_ptr<UserInterface>&& ui,
