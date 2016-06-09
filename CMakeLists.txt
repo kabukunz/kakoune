@@ -20,7 +20,7 @@ endif()
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -g -O0")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -O3")
 
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+if(KAK_DEBUG)
 	add_definitions(-DKAK_DEBUG)
 endif()
 
