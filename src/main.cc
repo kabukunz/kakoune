@@ -17,7 +17,6 @@
 #include "json_ui.hh"
 #include "parameters_parser.hh"
 #include "register_manager.hh"
-#include "remote.hh"
 #include "scope.hh"
 #include "shell_manager.hh"
 #include "string.hh"
@@ -98,10 +97,6 @@ void register_env_vars()
             "client_env_", true,
             [](StringView name, const Context& context)
             { return context.client().get_env_var(name.substr(11_byte)).str(); }
-        }, {
-            "session", false,
-            [](StringView name, const Context& context) -> String
-            { return Server::instance().session(); }
         }, {
             "client", false,
             [](StringView name, const Context& context) -> String
@@ -285,18 +280,6 @@ static Client* local_client = nullptr;
 static UserInterface* local_ui = nullptr;
 static bool convert_to_client_pending = false;
 
-pid_t fork_server_to_background()
-{
-    if (pid_t pid = fork())
-        return pid;
-
-    if (fork()) // double fork to orphan the server
-        exit(0);
-
-    write_stderr(format("Kakoune forked server to background ({}), for session '{}'\n",
-                        getpid(), Server::instance().session()));
-    return 0;
-}
 
 std::unique_ptr<UserInterface> make_ui(UIType ui_type)
 {
@@ -374,15 +357,6 @@ std::unique_ptr<UserInterface> create_local_ui(UIType ui_type)
             set_signal_handler(SIGTSTP, m_old_sigtstp);
             local_client = nullptr;
             local_ui = nullptr;
-            if (not convert_to_client_pending and
-                not ClientManager::instance().empty())
-            {
-                if (fork_server_to_background())
-                {
-                    this->NCursesUI::~NCursesUI();
-                    exit(0);
-                }
-            }
         }
 
     private:
@@ -427,8 +401,6 @@ void signal_handler(int signal)
         notify_fatal_error(msg);
     }
 
-    if (Server::has_instance())
-        Server::instance().close_session();
     if (BufferManager::has_instance())
         BufferManager::instance().backup_modified_buffers();
 
@@ -436,28 +408,6 @@ void signal_handler(int signal)
         exit(-1);
     else
         abort();
-}
-
-int run_client(StringView session, StringView init_command, UIType ui_type)
-{
-    try
-    {
-        EventManager event_manager;
-        RemoteClient client{session, make_ui(ui_type), get_env_vars(), init_command};
-        while (true)
-            event_manager.handle_next_events(EventMode::Normal);
-    }
-    catch (peer_disconnected&)
-    {
-        write_stderr("disconnected from server\n");
-        return -1;
-    }
-    catch (connection_failed& e)
-    {
-        write_stderr(format("{}\n", e.what()));
-        return -1;
-    }
-    return 0;
 }
 
 int run_server(StringView session, StringView init_command,
@@ -672,31 +622,6 @@ int run_filter(StringView keystr, StringView commands, ConstArrayView<StringView
     return 0;
 }
 
-int run_pipe(StringView session)
-{
-    char buf[512];
-    String command;
-    while (ssize_t count = read(0, buf, 512))
-    {
-        if (count < 0)
-        {
-            write_stderr("error while reading stdin\n");
-            return -1;
-        }
-        command += StringView{buf, buf + count};
-    }
-    try
-    {
-        send_command(session, command);
-    }
-    catch (connection_failed& e)
-    {
-        write_stderr(format("{}\n", e.what()));
-        return -1;
-    }
-    return 0;
-}
-
 UIType parse_ui_type(StringView ui_name)
 {
     if (ui_name == "ncurses") return UIType::NCurses;
@@ -736,20 +661,10 @@ int cli(int argc, char* argv[])
         ByteCoord target_coord;
         Vector<StringView> files;
 
-        try
-        {
-            return run_server(session, init_command,
-                              true,  // no configs
-                              daemon_mode,  // don't send to bg as daemon
-                              ui_type, files, target_coord);
-        }
-        catch (convert_to_client_mode& convert)
-        {
-            raise(SIGTSTP);
-            return run_client(convert.session,
-                              format("try %^buffer '{}'^; echo converted to client only mode",
-                                     escape(convert.buffer_name, "'^", '\\')), ui_type);
-        }
+        return run_server(session, init_command,
+                          true,  // no configs
+                          daemon_mode,  // don't send to bg as daemon
+                          ui_type, files, target_coord);
     }
     catch (startup_error& error)
     {
