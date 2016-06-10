@@ -4,6 +4,11 @@ project(kakoune)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${kakoune_SOURCE_DIR}/cmake")
 set(BIN_DIR ${kakoune_SOURCE_DIR}/bin)
 
+# include(ExternalData)
+#
+# set( ExternalData_SOURCE_ROOT "${kakoune_SOURCE_DIR}" )
+# set( ExternalData_BINARY_ROOT "${kakoune_BINARY_DIR}" )
+
 # Bump up warning levels appropriately for clang, gcc & msvc and build in debug mode
 if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" OR ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic -std=c++14")
@@ -30,8 +35,18 @@ find_package(NCursesw REQUIRED)
 include_directories("./src")
 file (GLOB kakoune_SOURCES src/*.cc)
 
-include_directories(${CURSES_INCLUDE_DIR})
+set(module_SOURCES src_module/main.cc)
+
+
+include(superbuild/superbuild.cmake)
+
+add_subdirectory(pybind11)
+# pybind11_add_module(kakoune ${kakoune_SOURCES} ${module_SOURCES} DEPENDS Python-source Python)
+# target_link_libraries(kakoune PRIVATE ${CURSES_LIBRARY})
+
+include_directories(${CURSES_INCLUDE_DIR} ${PYTHON_INCLUDE_DIR} ${PYBIND11_INCLUDE_DIR})
 add_executable(kak ${kakoune_SOURCES})
-target_link_libraries(kak PRIVATE ${CURSES_LIBRARY})
+add_dependencies( kak Python)
+target_link_libraries(kak PRIVATE ${CURSES_LIBRARY} ${PYTHON_LIBRARIES})
 
 install(TARGETS kak RUNTIME DESTINATION ${BIN_DIR})
