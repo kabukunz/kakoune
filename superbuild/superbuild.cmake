@@ -13,7 +13,7 @@ endif()
 
 include( ExternalProject )
 
-include(superbuild/external-zlib.cmake)
+include(External-zlib.cmake)
 
 set(ep_common_args
   -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
@@ -23,6 +23,9 @@ set(ep_common_args
   -DCMAKE_RUNTIME_OUTPUT_DIRECTORY:PATH=${CMAKE_BINARY_DIR}/kakoune-build/bin
   )
 
+include(External-Python.cmake)
+set(_python_args "-DPYTHON_EXECUTABLE:FILEPATH=${PYTHON_EXECUTABLE}")
+
 # Compute -G arg for configuring external projects with the same CMake generator:
 if(CMAKE_EXTRA_GENERATOR)
   set(gen "${CMAKE_EXTRA_GENERATOR} - ${CMAKE_GENERATOR}")
@@ -30,9 +33,16 @@ else()
   set(gen "${CMAKE_GENERATOR}" )
 endif()
 
-option(kakoune_USE_WRAP_PYTHON "Add Python wrapping to the superbuild" ON)
-if(NOT EXISTS PYTHON_EXECUTABLE AND kakoune_USE_WRAP_PYTHON OR kakoune_USE_VTK)
-  include(${CMAKE_SOURCE_DIR}/superbuild/External-Python.cmake)
-  list(APPEND kakoune_DEPENDENCIES Python)
-  set(_python_args "-DPYTHON_EXECUTABLE:FILEPATH=${PYTHON_EXECUTABLE}")
-endif()
+# ExternalProject_Add(Superbuild
+#   DEPENDS Python
+#   DOWNLOAD_COMMAND ""
+#   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/..
+#   BINARY_DIR Superbuild-build
+#   CMAKE_GENERATOR ${gen}
+#   CMAKE_ARGS
+#     ${ep_common_args}
+#     ${_build_doc_args}
+#     ${_python_args}
+#     -DBUILD_SHARED_LIBS:BOOL=FALSE
+#   INSTALL_COMMAND ""
+# )

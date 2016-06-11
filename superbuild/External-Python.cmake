@@ -53,7 +53,7 @@ ExternalProject_Add(Python
     -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
     #-DCMAKE_CXX_FLAGS:STRING=${ep_common_cxx_flags} # Not used
     -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
-    -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_BINARY_DIR}/Python-install
+    -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}/Python-install
     #-DBUILD_TESTING:BOOL=OFF
     -DBUILD_SHARED:BOOL=ON
     -DBUILD_STATIC:BOOL=OFF
@@ -68,7 +68,7 @@ ExternalProject_Add(Python
   ${EXTERNAL_PROJECT_OPTIONAL_CMAKE_ARGS}
   DEPENDS Python-source zlib
   )
-set(_python_DIR ${CMAKE_BINARY_DIR}/Python-install)
+set(_python_DIR ${CMAKE_CURRENT_BINARY_DIR}/Python-install)
 
 if(UNIX)
   set(_python_IMPORT_SUFFIX so)
@@ -76,13 +76,14 @@ if(UNIX)
     set(_python_IMPORT_SUFFIX dylib)
   endif()
   set(PYTHON_INCLUDE_DIR "${_python_DIR}/include/python3.5" CACHE PATH "Python include dir" FORCE)
-  set(PYTHON_LIBRARY "${_python_DIR}/lib/libpython3.5.${_python_IMPORT_SUFFIX}" CACHE FILEPATH "Python library" FORCE)
-  set(PYTHON_EXECUTABLE ${CMAKE_BINARY_DIR}/Python-build/bin/python CACHE FILEPATH "Python executable" FORCE)
+
+  set(PYTHON_LIBRARY "${_python_DIR}/lib/libpython3.5m.${_python_IMPORT_SUFFIX}" CACHE FILEPATH "Python library" FORCE)
+  set(PYTHON_EXECUTABLE ${CMAKE_CURRENT_BINARY_DIR}/Python-build/bin/python CACHE FILEPATH "Python executable" FORCE)
   set(PY_SITE_PACKAGES_PATH "${_python_DIR}/lib/python3.5/site-packages" CACHE PATH "Python site-packages path" FORCE)
 elseif(WIN32)
   set(PYTHON_INCLUDE_DIR "${_python_DIR}/include" CACHE PATH "Python include dir" FORCE)
   set(PYTHON_LIBRARY "${_python_DIR}/libs/python35.lib" CACHE FILEPATH "Python library" FORCE)
-  set(PYTHON_EXECUTABLE "${CMAKE_BINARY_DIR}/Python-install/bin/python.exe" CACHE FILEPATH "Python executable" FORCE)
+  set(PYTHON_EXECUTABLE "${CMAKE_CURRENT_BINARY_DIR}/Python-install/bin/python.exe" CACHE FILEPATH "Python executable" FORCE)
   set(PY_SITE_PACKAGES_PATH "${_python_DIR}/Lib/site-packages" CACHE PATH "Python site-packages path" FORCE)
 else()
   message(FATAL_ERROR "Unknown system !")

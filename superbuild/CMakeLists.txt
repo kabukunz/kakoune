@@ -4,8 +4,9 @@ if( COMMAND CMAKE_POLICY )
   cmake_policy( SET CMP0003 NEW )
 endif( COMMAND CMAKE_POLICY )
 
-project( kakoune )
+project( superbuild )
 
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/../superbuild")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/../cmake")
 
 if( CMAKE_HOST_WIN32 )
@@ -25,4 +26,4 @@ if( CMAKE_HOST_WIN32 )
   endif()
 endif()
 
-include( ${CMAKE_SOURCE_DIR}/Superbuild.cmake )
+include( ${CMAKE_SOURCE_DIR}/superbuild/superbuild.cmake )

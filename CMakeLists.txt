@@ -35,18 +35,35 @@ find_package(NCursesw REQUIRED)
 include_directories("./src")
 file (GLOB kakoune_SOURCES src/*.cc)
 
+
 set(module_SOURCES src_module/main.cc)
 
+add_subdirectory(superbuild)
 
-include(superbuild/superbuild.cmake)
-
-add_subdirectory(pybind11)
+# add_subdirectory(pybind11)
 # pybind11_add_module(kakoune ${kakoune_SOURCES} ${module_SOURCES} DEPENDS Python-source Python)
 # target_link_libraries(kakoune PRIVATE ${CURSES_LIBRARY})
 
-include_directories(${CURSES_INCLUDE_DIR} ${PYTHON_INCLUDE_DIR} ${PYBIND11_INCLUDE_DIR})
+
+MESSAGE(STATUS "WITH_PYMALLOC " ${WITH_PYMALLOC})
+MESSAGE(STATUS "PYTHON_INCLUDE_DIR: " ${PYTHON_INCLUDE_DIR})
+MESSAGE(STATUS "PYTHON_LIBRARY: " ${PYTHON_LIBRARY})
+
+
 add_executable(kak ${kakoune_SOURCES})
-add_dependencies( kak Python)
-target_link_libraries(kak PRIVATE ${CURSES_LIBRARY} ${PYTHON_LIBRARIES})
+
+add_custom_target(Superbuild ALL
+	Python
+	BYPRODUCTS ${PYTHON_LIBRARY} ${ZLIB_LIBRARY}
+	DEPENDS zlib Python
+	)
+
+
+include_directories(${CURSES_INCLUDE_DIR} ${PYTHON_INCLUDE_DIR} ${PYBIND11_INCLUDE_DIR})
+
+
+add_dependencies(kak Superbuild)
+target_link_libraries(kak ${CURSES_LIBRARY} ${PYTHON_LIBRARY})
+
 
 install(TARGETS kak RUNTIME DESTINATION ${BIN_DIR})
