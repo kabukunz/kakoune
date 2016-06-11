@@ -40,9 +40,9 @@ set(module_SOURCES src_module/main.cc)
 
 add_subdirectory(superbuild)
 
-# add_subdirectory(pybind11)
-# pybind11_add_module(kakoune ${kakoune_SOURCES} ${module_SOURCES} DEPENDS Python-source Python)
-# target_link_libraries(kakoune PRIVATE ${CURSES_LIBRARY})
+add_subdirectory(pybind11)
+pybind11_add_module(kakoune ${kakoune_SOURCES} ${module_SOURCES})
+target_link_libraries(kakoune PRIVATE ${CURSES_LIBRARY})
 
 
 MESSAGE(STATUS "WITH_PYMALLOC " ${WITH_PYMALLOC})
