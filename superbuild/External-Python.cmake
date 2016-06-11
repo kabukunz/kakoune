@@ -45,8 +45,10 @@ else()
 endif()
 
 ExternalProject_Add(Python
-  GIT_REPOSITORY "${git_protocol}://github.com/python-cmake-buildsystem/python-cmake-buildsystem.git"
-  GIT_TAG "ef790ee133b48439fd3e372af89eca17ac7dbee5"
+  GIT_REPOSITORY "${git_protocol}://github.com/tony/python-cmake-buildsystem.git"
+  GIT_TAG "freebsd-support"
+  # GIT_REPOSITORY "${git_protocol}://github.com/python-cmake-buildsystem/python-cmake-buildsystem.git"
+  # GIT_TAG "ef790ee133b48439fd3e372af89eca17ac7dbee5"
   SOURCE_DIR ${CMAKE_BINARY_DIR}/Python
   BINARY_DIR Python-build
   CMAKE_CACHE_ARGS
@@ -55,8 +57,7 @@ ExternalProject_Add(Python
     -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
     -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}/Python-install
     #-DBUILD_TESTING:BOOL=OFF
-    -DBUILD_SHARED:BOOL=ON
-    -DBUILD_STATIC:BOOL=OFF
+    -DBUILD_LIBPYTHON_SHARED:BOOL=ON
     -DUSE_SYSTEM_LIBRARIES:BOOL=OFF
     -DZLIB_ROOT:FILEPATH=${ZLIB_ROOT}
     -DZLIB_INCLUDE_DIR:PATH=${ZLIB_INCLUDE_DIR}
@@ -67,6 +68,7 @@ ExternalProject_Add(Python
     ${EXTERNAL_PROJECT_OPTIONAL_CMAKE_CACHE_ARGS}
   ${EXTERNAL_PROJECT_OPTIONAL_CMAKE_ARGS}
   DEPENDS Python-source zlib
+
   )
 set(_python_DIR ${CMAKE_CURRENT_BINARY_DIR}/Python-install)
 

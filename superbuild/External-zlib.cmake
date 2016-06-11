@@ -3,8 +3,8 @@
 # by ITK and VTK.
 
 ExternalProject_Add(zlib
-  GIT_REPOSITORY "${git_protocol}://github.com/commontk/zlib.git"
-  GIT_TAG "66a753054b356da85e1838a081aa94287226823e"
+  GIT_REPOSITORY "${git_protocol}://github.com/tony/zlib.git"
+  GIT_TAG "freebsd-support"
   SOURCE_DIR zlib
   BINARY_DIR zlib-build
   INSTALL_DIR zlib-install
