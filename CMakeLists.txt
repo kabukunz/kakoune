@@ -9,19 +9,12 @@ foreach(p
     cmake_policy(SET ${p} NEW)
   endif()
 endforeach()
+
 project(kakoune)
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${kakoune_SOURCE_DIR}/cmake")
-set(BIN_DIR ${kakoune_SOURCE_DIR}/bin)
-
-# include(ExternalData)
-#
-# set( ExternalData_SOURCE_ROOT "${kakoune_SOURCE_DIR}" )
-# set( ExternalData_BINARY_ROOT "${kakoune_BINARY_DIR}" )
-
 # Bump up warning levels appropriately for clang, gcc & msvc and build in debug mode
-if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" OR ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic -std=c++14")
+if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" OR ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang" OR ${CMAKE_CXX_COMPILER_ID} STREQUAL "AppleClang")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic -std=c++14")
 	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -g")
 	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -O2")
 elseif (${CMAKE_CXX_COMPILER_ID} STREQUAL "MSVC")
@@ -35,6 +28,10 @@ endif()
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -g -O0")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -O3")
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${kakoune_SOURCE_DIR}/cmake")
+
+set(BIN_DIR ${kakoune_SOURCE_DIR}/bin)
+
 if(KAK_DEBUG)
 	add_definitions(-DKAK_DEBUG)
 endif()
@@ -44,19 +41,21 @@ find_package(NCursesw REQUIRED)
 
 include_directories("./src")
 include_directories("./src_module")
+
 file (GLOB kakoune_SOURCES src/*.cc)
 list(REMOVE_ITEM kakoune_SOURCES src/main.cc)
 set(module_SOURCES src_module/kakoune.cc)
+
 add_subdirectory(superbuild)
 
 set(PYTHONLIBS_FOUND TRUE)
 set(PYTHON_MODULE_EXTENSION .so)
 set(PYTHON_MODULE_PREFIX "")
 add_subdirectory(pybind11)
+
+
 include_directories(${CURSES_INCLUDE_DIR} ${PYTHON_INCLUDE_DIR} ${PYBIND11_INCLUDE_DIR})
 
-
-MESSAGE(STATUS "WITH_PYMALLOC " ${WITH_PYMALLOC})
 MESSAGE(STATUS "PYTHON_INCLUDE_DIR: " ${PYTHON_INCLUDE_DIR})
 MESSAGE(STATUS "PYTHON_LIBRARY: " ${PYTHON_LIBRARY})
 
@@ -66,15 +65,12 @@ add_custom_target(superbuild2
   DEPENDS Python zlib
 )
 
-
 pybind11_add_module(kakoune ${module_SOURCES} ${kakoune_SOURCES} src_module/main.cc )
 target_link_libraries(kakoune PRIVATE ${CURSES_LIBRARY})
 add_dependencies(kakoune superbuild2)
 
 add_executable(kak ${kakoune_SOURCES} ${module_SOURCES} src/main.cc)
 add_dependencies(kak Python zlib)
-
-
 add_dependencies(kak superbuild2)
 
 target_link_libraries(kak ${CURSES_LIBRARY} ${PYTHON_LIBRARY})
