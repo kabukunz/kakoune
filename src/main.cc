@@ -521,79 +521,8 @@ int run_server(StringView session, StringView init_command,
         Context empty_context{Context::EmptyContextFlag{}};
         global_scope.hooks().run_hook("KakEnd", "", empty_context);
     }
-
-    return 0;
 }
 
-int run_filter(StringView keystr, StringView commands, ConstArrayView<StringView> files, bool quiet)
-{
-    StringRegistry  string_registry;
-    GlobalScope     global_scope;
-    EventManager    event_manager;
-    ShellManager    shell_manager;
-    CommandManager  command_manager;
-    RegisterManager register_manager;
-    ClientManager   client_manager;
-    BufferManager   buffer_manager;
-
-    register_options();
-    register_env_vars();
-    register_registers();
-    register_commands();
-
-    try
-    {
-        auto keys = parse_keys(keystr);
-
-        auto apply_to_buffer = [&](Buffer& buffer)
-        {
-            try
-            {
-                InputHandler input_handler{
-                    { buffer, Selection{{0,0}, buffer.back_coord()} },
-                    Context::Flags::Transient
-                };
-
-                if (not commands.empty())
-                    command_manager.execute(commands, input_handler.context(),
-                                            ShellContext{});
-
-                for (auto& key : keys)
-                    input_handler.handle_key(key);
-            }
-            catch (Kakoune::runtime_error& err)
-            {
-                if (not quiet)
-                    write_stderr(format("error while applying keys to buffer '{}': {}\n",
-                                        buffer.display_name(), err.what()));
-            }
-        };
-
-        for (auto& file : files)
-        {
-            Buffer* buffer = open_file_buffer(file);
-            write_buffer_to_file(*buffer, file + ".kak-bak");
-            apply_to_buffer(*buffer);
-            write_buffer_to_file(*buffer, file);
-            buffer_manager.delete_buffer(*buffer);
-        }
-        if (not isatty(0))
-        {
-            Buffer* buffer = buffer_manager.create_buffer(
-                "*stdin*", Buffer::Flags::None, read_fd(0), InvalidTime);
-            apply_to_buffer(*buffer);
-            write_buffer_to_fd(*buffer, 1);
-            buffer_manager.delete_buffer(*buffer);
-        }
-    }
-    catch (Kakoune::runtime_error& err)
-    {
-        write_stderr(format("error: {}\n", err.what()));
-    }
-
-    buffer_manager.clear_buffer_trash();
-    return 0;
-}
 
 UIType parse_ui_type(StringView ui_name)
 {
