@@ -46,10 +46,8 @@ else()
 endif()
 
 ExternalProject_Add(Python
-  GIT_REPOSITORY "${git_protocol}://github.com/tony/python-cmake-buildsystem.git"
-  GIT_TAG "freebsd-support"
-  # GIT_REPOSITORY "${git_protocol}://github.com/python-cmake-buildsystem/python-cmake-buildsystem.git"
-  # GIT_TAG "ef790ee133b48439fd3e372af89eca17ac7dbee5"
+  GIT_REPOSITORY "${git_protocol}://github.com/python-cmake-buildsystem/python-cmake-buildsystem.git"
+  GIT_TAG "846ae61"
   SOURCE_DIR ${CMAKE_BINARY_DIR}/Python
   BINARY_DIR Python-build
   CMAKE_CACHE_ARGS
