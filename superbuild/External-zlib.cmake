@@ -14,6 +14,7 @@ ExternalProject_Add(zlib
     -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
     -DZLIB_MANGLE_PREFIX:STRING=itkexamples_zlib_
     -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
+  UPDATE_COMMAND ""
   )
 set(zlib_DIR "${CMAKE_CURRENT_BINARY_DIR}/zlib-install" CACHE PATH "zlib dir" FORCE)
 set(ZLIB_ROOT ${zlib_DIR} CACHE PATH "zlib root" FORCE)

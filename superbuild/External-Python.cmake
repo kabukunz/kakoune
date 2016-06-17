@@ -25,6 +25,7 @@ ExternalProject_Add(Python-source
   CONFIGURE_COMMAND ""
   BUILD_COMMAND ""
   INSTALL_COMMAND ""
+  UPDATE_COMMAND ""
   )
 
 if(APPLE)
@@ -68,7 +69,7 @@ ExternalProject_Add(Python
     ${EXTERNAL_PROJECT_OPTIONAL_CMAKE_CACHE_ARGS}
   ${EXTERNAL_PROJECT_OPTIONAL_CMAKE_ARGS}
   DEPENDS Python-source zlib
-
+  UPDATE_COMMAND ""
   )
 set(_python_DIR ${CMAKE_CURRENT_BINARY_DIR}/Python-install)
 
