@@ -21,7 +21,7 @@ struct WindowAndSelections
     size_t timestamp;
 };
 
-class ClientManager : public Singleton<ClientManager>
+class ClientManager : public Singleton<ClientManager> , std::enable_shared_from_this<ClientManager>
 {
 public:
     ClientManager();

@@ -7,7 +7,7 @@ namespace Kakoune
 class StringView;
 
 // return true if user asked to ignore the error
-bool notify_fatal_error(StringView message);
+    bool notify_fatal_error(StringView msg);
 
 void on_assert_failed(const char* message);
 

@@ -13,6 +13,7 @@
 namespace Kakoune
 {
 
+class ClientManager;
 class Window;
 class String;
 struct Key;
@@ -21,8 +22,9 @@ enum class EventMode;
 
 class Client : public SafeCountable, public OptionManagerWatcher
 {
-public:
-    Client(std::unique_ptr<UserInterface>&& ui,
+ public:
+    Client(ClientManager& client_manager,
+           std::unique_ptr<UserInterface>&& ui,
            std::unique_ptr<Window>&& window,
            SelectionList selections,
            EnvVarMap env_vars,

@@ -15,7 +15,8 @@
 namespace Kakoune
 {
 
-Client::Client(std::unique_ptr<UserInterface>&& ui,
+Client::Client(ClientManager& client_manager,
+               std::unique_ptr<UserInterface>&& ui,
                std::unique_ptr<Window>&& window,
                SelectionList selections,
                EnvVarMap env_vars,
@@ -28,6 +29,7 @@ Client::Client(std::unique_ptr<UserInterface>&& ui,
     m_window->set_client(this);
 
     context().set_client(*this);
+    context().set_client_manager(client_manager);
     context().set_window(*m_window);
 
     m_window->set_dimensions(m_ui->dimensions());
@@ -98,7 +100,7 @@ void Client::handle_available_input(EventMode mode)
     }
     catch (Kakoune::client_removed& removed)
     {
-        ClientManager::instance().remove_client(*this, removed.graceful);
+        context().client_manager().remove_client(*this, removed.graceful);
     }
 }
 
@@ -150,7 +152,7 @@ void Client::change_buffer(Buffer& buffer)
 
     m_last_buffer = &m_window->buffer();
 
-    auto& client_manager = ClientManager::instance();
+    auto& client_manager = context().client_manager();
     m_window->options().unregister_watcher(*this);
     m_window->set_client(nullptr);
     client_manager.add_free_window(std::move(m_window),
@@ -272,12 +274,12 @@ void Client::on_buffer_reload_key(Key key)
         return;
     }
 
-    for (auto& client : ClientManager::instance())
-    {
-        if (&client->context().buffer() == &buffer and
-            client->m_buffer_reload_dialog_opened)
-            client->close_buffer_reload_dialog();
-    }
+    // for (auto& client : ClientManager::instance())
+    // {
+    //     if (&client->context().buffer() == &buffer and
+    //         client->m_buffer_reload_dialog_opened)
+    //         client->close_buffer_reload_dialog();
+    // }
 }
 
 void Client::close_buffer_reload_dialog()

@@ -9,12 +9,12 @@
 namespace Kakoune
 {
 
-class BufferManager : public Singleton<BufferManager>
-{
+class ClientManager;
+
+class BufferManager : public Singleton<BufferManager> {
 public:
     using BufferList = Vector<std::unique_ptr<Buffer>>;
     using iterator = BufferList::const_iterator;
-
     ~BufferManager();
 
     Buffer* create_buffer(String name, Buffer::Flags flags,
@@ -31,11 +31,16 @@ public:
     Buffer& get_buffer(StringView name);
 
     void backup_modified_buffers();
-
     void clear_buffer_trash();
 private:
     BufferList m_buffers;
     BufferList m_buffer_trash;
+
+    // ClientManager& client_manager() const;
+    ClientManager* m_client_manager;
+    bool has_client_manager() const { return (bool)m_client_manager; }
+    void set_client_manager(ClientManager& client_manager);
+
 };
 
 }

@@ -1,6 +1,7 @@
 #include "context.hh"
 
 #include "client.hh"
+#include "client_manager.hh"
 #include "register_manager.hh"
 #include "window.hh"
 
@@ -14,10 +15,12 @@ Context::Context(InputHandler& input_handler, SelectionList selections,
     : m_input_handler{&input_handler},
       m_selections{std::move(selections)},
       m_flags(flags),
-      m_name(std::move(name))
-{}
+      m_client_manager(ClientManager::instance()),
+      m_name(std::move(name)) {}
 
-Context::Context(EmptyContextFlag) {}
+Context::Context(EmptyContextFlag) :
+  m_client_manager(ClientManager::instance())
+  {}
 
 Buffer& Context::buffer() const
 {
@@ -47,8 +50,13 @@ Client& Context::client() const
     return *m_client;
 }
 
-Scope& Context::scope() const
-{
+ClientManager& Context::client_manager() const {
+    if (not has_client_manager())
+        throw runtime_error("no client manager in context");
+    return m_client_manager;
+}
+
+Scope& Context::scope() const {
     if (has_window())
         return window();
     if (has_buffer())
@@ -62,8 +70,12 @@ void Context::set_client(Client& client)
     m_client.reset(&client);
 }
 
-void Context::set_window(Window& window)
-{
+void Context::set_client_manager(ClientManager& client_manager) {
+    kak_assert(not has_client_manager());
+    // haha no-op.. Singleton doesn't let us switch it out
+}
+
+void Context::set_window(Window& window) {
     kak_assert(&window.buffer() == &buffer());
     m_window.reset(&window);
 }

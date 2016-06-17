@@ -40,7 +40,7 @@ Client* ClientManager::create_client(std::unique_ptr<UserInterface>&& ui,
 {
     Buffer& buffer = **BufferManager::instance().begin();
     WindowAndSelections ws = get_free_window(buffer);
-    Client* client = new Client{std::move(ui), std::move(ws.window),
+    Client* client = new Client{*this, std::move(ui), std::move(ws.window),
                                 std::move(ws.selections), std::move(env_vars),
                                 generate_name()};
     m_clients.emplace_back(client);

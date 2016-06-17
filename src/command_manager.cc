@@ -1,14 +1,7 @@
 #include "command_manager.hh"
-
+#include "register_manager.hh"
 #include "alias_registry.hh"
 #include "context.hh"
-#include "register_manager.hh"
-#include "shell_manager.hh"
-#include "utils.hh"
-#include "optional.hh"
-#include "containers.hh"
-
-#include <algorithm>
 
 namespace Kakoune
 {
@@ -592,8 +585,9 @@ Completions CommandManager::complete(const Context& context,
                     tokens[tok_idx].content(), cursor_pos_in_token) };
 
     case Token::Type::ShellExpand:
-        return offset_pos(shell_complete(context, flags, tokens[tok_idx].content(),
-                                         cursor_pos_in_token), start);
+      return offset_pos(
+              shell_complete(context, flags, tokens[tok_idx].content(), cursor_pos_in_token),
+          start);
 
     case Token::Type::ValExpand:
         return {start , cursor_pos,
