@@ -60,7 +60,7 @@ include_directories(${CURSES_INCLUDE_DIR} ${PYTHON_INCLUDE_DIR} ${PYBIND11_INCLU
 MESSAGE(STATUS "PYTHON_INCLUDE_DIR: " ${PYTHON_INCLUDE_DIR})
 MESSAGE(STATUS "PYTHON_LIBRARY: " ${PYTHON_LIBRARY})
 
-add_custom_target(superbuild2
+add_custom_target(superbuild
   cmake --build . --target Python
   BYPRODUCTS ${PYTHON_LIBRARY} ${ZLIB_LIBRARY}
   DEPENDS Python zlib
@@ -68,11 +68,11 @@ add_custom_target(superbuild2
 
 pybind11_add_module(kakoune ${module_SOURCES} ${kakoune_SOURCES} src_module/main.cc )
 target_link_libraries(kakoune PRIVATE ${CURSES_LIBRARY})
-add_dependencies(kakoune superbuild2)
+add_dependencies(kakoune superbuild)
 
 add_executable(kak ${kakoune_SOURCES} ${module_SOURCES} src/main.cc)
 add_dependencies(kak Python zlib)
-add_dependencies(kak superbuild2)
+add_dependencies(kak superbuild)
 
 target_link_libraries(kak ${CURSES_LIBRARY} ${PYTHON_LIBRARY})
 
