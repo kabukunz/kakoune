@@ -13,11 +13,10 @@
 #include "ncurses_ui.hh"
 #include "json_ui.hh"
 #include "register_manager.hh"
-#include "unit_tests.hh"
 #include "window.hh"
+#include "unit_tests.hh"
 
 #include <fcntl.h>
-#include <unistd.h>
 
 using namespace Kakoune;
 
@@ -294,44 +293,41 @@ std::unique_ptr<UserInterface> make_ui(UIType ui_type)
     throw logic_error{};
 }
 
-std::unique_ptr<UserInterface> create_local_ui(UIType ui_type)
+std::unique_ptr<UserInterface> create_local_ui(UIType ui_type, ClientManager& client_manager)
 {
     if (ui_type != UIType::NCurses)
-        return make_ui(ui_type);
+      return make_ui(ui_type);
 
-    struct LocalUI : NCursesUI
-    {
-        LocalUI()
-        {
+    struct LocalUI : NCursesUI {
+        LocalUI() {
             kak_assert(not local_ui);
             local_ui = this;
-            m_old_sighup = set_signal_handler(SIGHUP, [](int) {
-                ClientManager::instance().remove_client(*local_client, false);
-            });
-
-            m_old_sigtstp = set_signal_handler(SIGTSTP, [](int) {
-                if (ClientManager::instance().count() == 1 and
-                    *ClientManager::instance().begin() == local_client)
-                {
-                    // Suspend normally if we are the only client
-                    auto current = set_signal_handler(SIGTSTP, static_cast<LocalUI*>(local_ui)->m_old_sigtstp);
-
-                    sigset_t unblock_sigtstp, old_mask;
-                    sigemptyset(&unblock_sigtstp);
-                    sigaddset(&unblock_sigtstp, SIGTSTP);
-                    sigprocmask(SIG_UNBLOCK, &unblock_sigtstp, &old_mask);
-
-                    raise(SIGTSTP);
-
-                    sigprocmask(SIG_SETMASK, &old_mask, nullptr);
-
-                    set_signal_handler(SIGTSTP, current);
-                }
-           });
+            // m_old_sighup = set_signal_handler(SIGHUP, [](int) {
+            //   client_manager.remove_client(*local_client, false);
+            // });
+            //
+            // m_old_sigtstp = set_signal_handler(SIGTSTP, [](int) {
+            //   if (client_manager.count() == 1 and
+            //       *client_manager.begin() == local_client) {
+            //     // Suspend normally if we are the only client
+            //     auto current = set_signal_handler(
+            //         SIGTSTP, static_cast<LocalUI*>(local_ui)->m_old_sigtstp);
+            //
+            //     sigset_t unblock_sigtstp, old_mask;
+            //     sigemptyset(&unblock_sigtstp);
+            //     sigaddset(&unblock_sigtstp, SIGTSTP);
+            //     sigprocmask(SIG_UNBLOCK, &unblock_sigtstp, &old_mask);
+            //
+            //     raise(SIGTSTP);
+            //
+            //     sigprocmask(SIG_SETMASK, &old_mask, nullptr);
+            //
+            //     set_signal_handler(SIGTSTP, current);
+            //   }
+            // });
         }
 
-        ~LocalUI()
-        {
+        ~LocalUI() {
             set_signal_handler(SIGHUP, m_old_sighup);
             set_signal_handler(SIGTSTP, m_old_sigtstp);
             local_client = nullptr;
@@ -347,8 +343,7 @@ std::unique_ptr<UserInterface> create_local_ui(UIType ui_type)
     if (not isatty(1))
         throw startup_error("stdout is not a tty");
 
-    if (not isatty(0))
-    {
+    if (not isatty(0)) {
         // move stdin to another fd, and restore tty as stdin
         int fd = dup(0);
         int tty = open("/dev/tty", O_RDONLY);
@@ -360,22 +355,29 @@ std::unique_ptr<UserInterface> create_local_ui(UIType ui_type)
     return std::make_unique<LocalUI>();
 }
 
-void signal_handler(int signal)
-{
+void signal_handler(int signal) {
     NCursesUI::abort();
     const char* text = nullptr;
-    switch (signal)
-    {
-        case SIGSEGV: text = "SIGSEGV"; break;
-        case SIGFPE:  text = "SIGFPE";  break;
-        case SIGQUIT: text = "SIGQUIT"; break;
-        case SIGTERM: text = "SIGTERM"; break;
-        case SIGPIPE: text = "SIGPIPE"; break;
+    switch (signal) {
+        case SIGSEGV:
+            text = "SIGSEGV";
+            break;
+        case SIGFPE:
+            text = "SIGFPE";
+            break;
+        case SIGQUIT:
+            text = "SIGQUIT";
+            break;
+        case SIGTERM:
+            text = "SIGTERM";
+            break;
+        case SIGPIPE:
+            text = "SIGPIPE";
+            break;
     }
-    if (signal != SIGTERM)
-    {
-        auto msg = format("Received {}, exiting.\nPid: {}\nCallstack:\n{}",
-                          text, getpid(), Backtrace{}.desc());
+    if (signal != SIGTERM) {
+        auto msg = format("Received {}, exiting.\nPid: {}\nCallstack:\n{}", text,
+                          getpid(), Backtrace{}.desc());
         write_stderr(msg);
         notify_fatal_error(msg);
     }
@@ -389,23 +391,24 @@ void signal_handler(int signal)
         abort();
 }
 
-int run_server(StringView session, StringView init_command,
-               bool ignore_kakrc, bool daemon, UIType ui_type,
-               ConstArrayView<StringView> files, ByteCoord target_coord)
-{
+int run_server(StringView session,
+               StringView init_command,
+               bool ignore_kakrc,
+               bool daemon,
+               UIType ui_type,
+               ConstArrayView<StringView> files,
+               ByteCoord target_coord) {
     static bool terminate = false;
-    if (daemon)
-    {
-        if (session.empty())
-        {
+    if (daemon) {
+        if (session.empty()) {
             write_stderr("-d needs a session name to be specified with -s\n");
             return -1;
         }
-        if (pid_t child = fork())
-        {
-            write_stderr(format("Kakoune forked to background, for session '{}'\n"
-                                "send SIGTERM to process {} for closing the session\n",
-                                session, child));
+        if (pid_t child = fork()) {
+            write_stderr(
+                format("Kakoune forked to background, for session '{}'\n"
+                       "send SIGTERM to process {} for closing the session\n",
+                       session, child));
             exit(0);
         }
         set_signal_handler(SIGTERM, [](int) { terminate = true; });
@@ -451,11 +454,6 @@ int run_server(StringView session, StringView init_command,
         write_to_debug_buffer("error while parsing kakrc: asked to quit");
     }
 
-    {
-        Context empty_context{Context::EmptyContextFlag{}};
-        global_scope.hooks().run_hook("KakBegin", "", empty_context);
-    }
-
     if (not files.empty()) try
     {
         // create buffers in reverse order so that the first given buffer
@@ -483,8 +481,8 @@ int run_server(StringView session, StringView init_command,
 
     if (not daemon)
     {
-        local_client = client_manager.create_client(
-            create_local_ui(ui_type), get_env_vars(), init_command);
+        local_client = client_manager.create_client(create_local_ui(ui_type, client_manager),
+                                                    get_env_vars(), init_command);
 
         if (local_client)
         {

@@ -1397,7 +1397,7 @@ void context_wrap(const ParametersParser& parser, Context& context, Func func)
     for (auto& r : parser.get_switch("save-regs").value_or("/\"|^@"))
         saved_registers.emplace_back(r, context);
 
-    ClientManager& cm = ClientManager::instance();
+    auto& cm = context.client_manager();
     if (auto bufnames = parser.get_switch("buffer"))
     {
         auto context_wrap_for_buffer = [&](Buffer& buffer) {
@@ -1806,27 +1806,11 @@ const CommandDesc face_cmd = {
     {
         FaceRegistry::instance().register_alias(parser[0], parser[1], true);
 
-        for (auto& client : ClientManager::instance())
-            client->force_redraw();
-    }
-};
-
-const CommandDesc set_client_name_cmd = {
-    "nameclient",
-    "nc",
-    "nameclient <name>: set current client name to <name>",
-    single_name_param,
-    CommandFlags::None,
-    CommandHelper{},
-    CommandCompleter{},
-    [](const ParametersParser& parser, Context& context, const ShellContext&)
-    {
-        if (ClientManager::instance().validate_client_name(parser[0]))
-            context.set_name(parser[0]);
-        else if (context.name() != parser[0])
-            throw runtime_error(format("client name '{}' is not unique", parser[0]));
-    }
-};
+      context.client().force_redraw();
+      // @TODO this should iterate through all clients
+      // for (auto& client : ClientManager::instance())
+      //   client->force_redraw();
+    }};
 
 const CommandDesc set_register_cmd = {
     "reg",
@@ -1935,7 +1919,6 @@ void register_commands()
     register_command(info_cmd);
     register_command(try_catch_cmd);
     register_command(face_cmd);
-    register_command(set_client_name_cmd);
     register_command(set_register_cmd);
     register_command(select_cmd);
     register_command(change_working_directory_cmd);

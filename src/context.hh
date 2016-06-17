@@ -11,6 +11,7 @@ namespace Kakoune
 class Window;
 class Buffer;
 class Client;
+class ClientManager;
 class Scope;
 class InputHandler;
 class UserInterface;
@@ -104,6 +105,9 @@ public:
     Client& client() const;
     bool has_client() const { return (bool)m_client; }
 
+    ClientManager& client_manager() const;
+    bool has_client_manager() const { return (&m_client_manager != nullptr); }
+
     InputHandler& input_handler() const;
     bool has_input_handler() const { return (bool)m_input_handler; }
 
@@ -117,6 +121,7 @@ public:
     void change_buffer(Buffer& buffer);
 
     void set_client(Client& client);
+    void set_client_manager(ClientManager& client_manager);
     void set_window(Window& window);
 
     Scope& scope() const;
@@ -160,8 +165,9 @@ private:
     Flags m_flags;
 
     SafePtr<InputHandler> m_input_handler;
-    SafePtr<Window>       m_window;
-    SafePtr<Client>       m_client;
+    SafePtr<Window> m_window;
+    SafePtr<Client> m_client;
+    ClientManager& m_client_manager;
 
     Optional<SelectionList> m_selections;
 
