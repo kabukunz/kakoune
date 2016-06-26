@@ -54,7 +54,14 @@ include(CheckLibraryExists)
 
 find_library(CURSES_CURSES_LIBRARY NAMES curses )
 
-find_library(CURSES_NCURSESW_LIBRARY NAMES ncursesw )
+if (APPLE)
+  find_library(CURSES_NCURSESW_LIBRARY NAMES ncursesw
+    PATHS /usr/local/opt/
+    PATH_SUFFIXES lib ncurses/lib
+  )
+else()
+  find_library(CURSES_NCURSESW_LIBRARY NAMES ncursesw )
+endif()
 set(CURSES_USE_NCURSESW FALSE)
 
 if(CURSES_NCURSESW_LIBRARY  AND ((NOT CURSES_CURSES_LIBRARY) OR CURSES_NEED_NCURSESW))
