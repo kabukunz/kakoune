@@ -590,10 +590,10 @@ int cli(int argc, char* argv[])
 }
 
 int main(int argc, char* argv[]) {
-  PyImport_AppendInittab("kakoune", InitKakoune);
-  Py_Initialize();
-  PyRun_SimpleString("import kakoune\nprint( kakoune.parse_filename('./') )");
-  Py_Finalize();
+  // PyImport_AppendInittab("kakoune", InitKakoune);
+  // Py_Initialize();
+  // PyRun_SimpleString("import kakoune\nprint( kakoune.parse_filename('./') )");
+  // Py_Finalize();
 
   return cli(argc, argv);
 }
