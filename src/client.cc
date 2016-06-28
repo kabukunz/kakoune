@@ -4,7 +4,6 @@
 #include "buffer_manager.hh"
 #include "buffer_utils.hh"
 #include "file.hh"
-#include "client_manager.hh"
 #include "command_manager.hh"
 #include "event_manager.hh"
 #include "window.hh"
@@ -15,8 +14,7 @@
 namespace Kakoune
 {
 
-Client::Client(ClientManager& client_manager,
-               std::unique_ptr<UserInterface>&& ui,
+Client::Client(std::unique_ptr<UserInterface>&& ui,
                std::unique_ptr<Window>&& window,
                SelectionList selections,
                EnvVarMap env_vars,
@@ -29,7 +27,6 @@ Client::Client(ClientManager& client_manager,
     m_window->set_client(this);
 
     context().set_client(*this);
-    context().set_client_manager(client_manager);
     context().set_window(*m_window);
 
     m_window->set_dimensions(m_ui->dimensions());
@@ -44,6 +41,29 @@ Client::~Client()
 {
     m_window->options().unregister_watcher(*this);
     m_window->set_client(nullptr);
+}
+
+WindowAndSelections Client::get_free_window(Buffer& buffer)
+{
+    auto it = find_if(m_free_windows | reverse(),
+                      [&](const WindowAndSelections& ws)
+                      { return &ws.window->buffer() == &buffer; });
+
+    if (it == m_free_windows.rend())
+        return { std::make_unique<Window>(buffer), { buffer, Selection{} } };
+
+    it->window->force_redraw();
+    WindowAndSelections res = std::move(*it);
+    m_free_windows.erase(it.base()-1);
+    res.selections.update();
+    return res;
+}
+
+void Client::add_free_window(std::unique_ptr<Window>&& window, SelectionList selections)
+{
+    window->clear_display_buffer();
+    Buffer& buffer = window->buffer();
+    m_free_windows.push_back({ std::move(window), SelectionList{ std::move(selections) }, buffer.timestamp() });
 }
 
 Optional<Key> Client::get_next_key(EventMode mode)
@@ -73,34 +93,27 @@ void Client::handle_available_input(EventMode mode)
 
     try
     {
-        try
+        while (Optional<Key> key = get_next_key(mode))
         {
-            while (Optional<Key> key = get_next_key(mode))
+            if (*key == ctrl('c'))
+                killpg(getpgrp(), SIGINT);
+            else if (*key == Key::FocusIn)
+                context().hooks().run_hook("FocusIn", context().name(), context());
+            else if (*key == Key::FocusOut)
+                context().hooks().run_hook("FocusOut", context().name(), context());
+            else if (key->modifiers == Key::Modifiers::Resize)
             {
-                if (*key == ctrl('c'))
-                    killpg(getpgrp(), SIGINT);
-                else if (*key == Key::FocusIn)
-                    context().hooks().run_hook("FocusIn", context().name(), context());
-                else if (*key == Key::FocusOut)
-                    context().hooks().run_hook("FocusOut", context().name(), context());
-                else if (key->modifiers == Key::Modifiers::Resize)
-                {
-                    m_window->set_dimensions(m_ui->dimensions());
-                    force_redraw();
-                }
-                else
-                    m_input_handler.handle_key(*key);
+                m_window->set_dimensions(m_ui->dimensions());
+                force_redraw();
             }
-        }
-        catch (Kakoune::runtime_error& error)
-        {
-            context().print_status({ error.what().str(), get_face("Error") });
-            context().hooks().run_hook("RuntimeError", error.what(), context());
+            else
+                m_input_handler.handle_key(*key);
         }
     }
-    catch (Kakoune::client_removed& removed)
+    catch (Kakoune::runtime_error& error)
     {
-        context().client_manager().remove_client(*this, removed.graceful);
+        context().print_status({ error.what().str(), get_face("Error") });
+        context().hooks().run_hook("RuntimeError", error.what(), context());
     }
 }
 
@@ -152,12 +165,11 @@ void Client::change_buffer(Buffer& buffer)
 
     m_last_buffer = &m_window->buffer();
 
-    auto& client_manager = context().client_manager();
     m_window->options().unregister_watcher(*this);
     m_window->set_client(nullptr);
-    client_manager.add_free_window(std::move(m_window),
+    add_free_window(std::move(m_window),
                                    std::move(context().selections()));
-    WindowAndSelections ws = client_manager.get_free_window(buffer);
+    WindowAndSelections ws = get_free_window(buffer);
 
     m_window = std::move(ws.window);
     m_window->set_client(this);

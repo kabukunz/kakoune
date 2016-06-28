@@ -14,13 +14,6 @@ struct client_removed
     const bool graceful;
 };
 
-struct WindowAndSelections
-{
-    std::unique_ptr<Window> window;
-    SelectionList selections;
-    size_t timestamp;
-};
-
 class ClientManager : public Singleton<ClientManager> , std::enable_shared_from_this<ClientManager>
 {
 public:
