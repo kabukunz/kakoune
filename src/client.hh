@@ -13,18 +13,24 @@
 namespace Kakoune
 {
 
-class ClientManager;
 class Window;
 class String;
 struct Key;
+struct WindowAndSelections;
 
 enum class EventMode;
+
+struct WindowAndSelections
+{
+    std::unique_ptr<Window> window;
+    SelectionList selections;
+    size_t timestamp;
+};
 
 class Client : public SafeCountable, public OptionManagerWatcher
 {
  public:
-    Client(ClientManager& client_manager,
-           std::unique_ptr<UserInterface>&& ui,
+    Client(std::unique_ptr<UserInterface>&& ui,
            std::unique_ptr<Window>&& window,
            SelectionList selections,
            EnvVarMap env_vars,
@@ -65,7 +71,11 @@ class Client : public SafeCountable, public OptionManagerWatcher
     Buffer* last_buffer() const { return m_last_buffer.get(); }
     void set_last_buffer(Buffer* last_buffer) { m_last_buffer = last_buffer; }
 
+    WindowAndSelections get_free_window(Buffer& buffer);
+    void add_free_window(std::unique_ptr<Window>&& window, SelectionList selections);
+
 private:
+    Vector<WindowAndSelections, MemoryDomain::Client> m_free_windows;
     void on_option_changed(const Option& option) override;
 
     void on_buffer_reload_key(Key key);
