@@ -134,6 +134,8 @@ private:
     Vector<WindowAndSelections, MemoryDomain::Client> m_free_windows;
 
     SafePtr<Buffer> m_last_buffer;
+    Vector<std::unique_ptr<Window>> m_window_trash;
+    void clear_window_trash();
 };
 
 enum class Autoreload
