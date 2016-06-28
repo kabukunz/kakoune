@@ -109,36 +109,10 @@ void ClientManager::add_free_window(std::unique_ptr<Window>&& window, SelectionL
 
 void ClientManager::ensure_no_client_uses_buffer(Buffer& buffer)
 {
-    for (auto& client : m_clients)
-    {
-        client->context().jump_list().forget_buffer(buffer);
-        if (client->last_buffer() == &buffer)
-            client->set_last_buffer(nullptr);
+    for_each (m_clients.begin(), m_clients.end(), [&buffer](auto& c) {
+        c->ensure_not_using_buffer(buffer);
+    });
 
-        if (&client->context().buffer() != &buffer)
-            continue;
-
-        if (client->context().is_editing())
-            throw runtime_error(format("client '{}' is inserting in buffer '{}'",
-                                       client->context().name(),
-                                       buffer.display_name()));
-
-        if (Buffer* last_buffer = client->last_buffer())
-        {
-            client->context().change_buffer(*last_buffer);
-            continue;
-        }
-
-        for (auto& buf : BufferManager::instance())
-        {
-            if (buf.get() != &buffer)
-            {
-               client->context().change_buffer(*buf);
-               client->set_last_buffer(nullptr);
-               break;
-            }
-        }
-    }
     auto end = std::remove_if(m_free_windows.begin(), m_free_windows.end(),
                               [&buffer](const WindowAndSelections& ws)
                               { return &ws.window->buffer() == &buffer; });

@@ -191,6 +191,37 @@ static bool is_inline(InfoStyle style)
            style == InfoStyle::InlineBelow;
 }
 
+void Client::ensure_not_using_buffer(Buffer& buffer)
+{
+    context().jump_list().forget_buffer(buffer);
+    if (last_buffer() == &buffer)
+        set_last_buffer(nullptr);
+
+    if (&context().buffer() != &buffer)
+        return;
+
+    if (context().is_editing())
+        throw runtime_error(format("client '{}' is inserting in buffer '{}'",
+                                   context().name(),
+                                   buffer.display_name()));
+
+    if (Buffer* l_last_buffer = last_buffer())
+    {
+        context().change_buffer(*l_last_buffer);
+        return;
+    }
+
+    for (auto& buf : BufferManager::instance())
+    {
+        if (buf.get() != &buffer)
+        {
+           context().change_buffer(*buf);
+           set_last_buffer(nullptr);
+           break;
+        }
+    }
+}
+
 void Client::redraw_ifn()
 {
     Window& window = context().window();
