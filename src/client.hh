@@ -42,6 +42,8 @@ class Client : public SafeCountable, public OptionManagerWatcher
     // handle all the keys currently available in the user interface
     void handle_available_input(EventMode mode);
 
+    void ensure_not_using_buffer(Buffer& buffer);
+
     void menu_show(Vector<DisplayLine> choices, ByteCoord anchor, MenuStyle style);
     void menu_select(int selected);
     void menu_hide();
@@ -68,14 +70,13 @@ class Client : public SafeCountable, public OptionManagerWatcher
 
     StringView get_env_var(StringView name) const;
 
-    Buffer* last_buffer() const { return m_last_buffer.get(); }
-    void set_last_buffer(Buffer* last_buffer) { m_last_buffer = last_buffer; }
-
     WindowAndSelections get_free_window(Buffer& buffer);
     void add_free_window(std::unique_ptr<Window>&& window, SelectionList selections);
 
+    Buffer* last_buffer() const { return m_last_buffer.get(); }
+    void set_last_buffer(Buffer* last_buffer) { m_last_buffer = last_buffer; }
+
 private:
-    Vector<WindowAndSelections, MemoryDomain::Client> m_free_windows;
     void on_option_changed(const Option& option) override;
 
     void on_buffer_reload_key(Key key);
@@ -130,6 +131,7 @@ private:
     Vector<Key, MemoryDomain::Client> m_pending_keys;
 
     bool m_buffer_reload_dialog_opened = false;
+    Vector<WindowAndSelections, MemoryDomain::Client> m_free_windows;
 
     SafePtr<Buffer> m_last_buffer;
 };
