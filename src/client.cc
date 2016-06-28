@@ -220,6 +220,14 @@ void Client::ensure_not_using_buffer(Buffer& buffer)
            break;
         }
     }
+    auto end = std::remove_if(m_free_windows.begin(), m_free_windows.end(),
+                              [&buffer](const WindowAndSelections& ws)
+                              { return &ws.window->buffer() == &buffer; });
+
+    for (auto it = end; it != m_free_windows.end(); ++it)
+        m_window_trash.push_back(std::move(it->window));
+
+    m_free_windows.erase(end, m_free_windows.end());
 }
 
 void Client::redraw_ifn()
@@ -412,6 +420,11 @@ void Client::info_hide()
     m_info = Info{};
     m_ui_pending |= InfoHide;
     m_ui_pending &= ~InfoShow;
+}
+
+void Client::clear_window_trash()
+{
+    m_window_trash.clear();
 }
 
 }
