@@ -17,6 +17,7 @@
 #include "unit_tests.hh"
 
 #include <fcntl.h>
+#include <unistd.h>
 
 using namespace Kakoune;
 
