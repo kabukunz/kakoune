@@ -623,6 +623,17 @@ String Buffer::debug_description() const
                   content_size, additional_size);
 }
 
+void Buffer::notifyBufferDelete() {
+    BufferEvent ev(this);
+    notifyObservers<BufferEvent&>(&BufferObserver::onBufferDelete, ev);
+}
+
+void Buffer::notifyBufferClearTrash() {
+    BufferEvent ev(this);
+    notifyObservers<BufferEvent&>(&BufferObserver::onBufferClearTrash, ev);
+}
+
+
 UnitTest test_parse_line{[]
 {
     {

@@ -11,6 +11,7 @@ namespace Kakoune
 
 class ClientManager;
 
+
 class BufferManager : public Singleton<BufferManager> {
 public:
     using BufferList = Vector<std::unique_ptr<Buffer>>;
