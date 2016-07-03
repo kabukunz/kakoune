@@ -14,7 +14,7 @@ struct client_removed
     const bool graceful;
 };
 
-class ClientManager : public Singleton<ClientManager> , std::enable_shared_from_this<ClientManager>
+class ClientManager : public Singleton<ClientManager>, std::enable_shared_from_this<ClientManager>, public BufferObserver
 {
 public:
     ClientManager();
@@ -57,6 +57,15 @@ private:
     ClientList m_clients;
     Vector<WindowAndSelections, MemoryDomain::Client> m_free_windows;
     Vector<std::unique_ptr<Window>> m_window_trash;
+
+    void onBufferDelete(BufferEvent& ev) override {
+        ensure_no_client_uses_buffer(*ev.buffer());
+    }
+
+    void onBufferClearTrash(BufferEvent& ev) override {
+        ensure_no_client_uses_buffer(*ev.buffer());
+        clear_window_trash();
+    }
 };
 
 }

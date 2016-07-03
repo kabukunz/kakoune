@@ -39,7 +39,7 @@ void BufferManager::delete_buffer(Buffer& buffer)
                       { return p.get() == &buffer; });
     kak_assert(it != m_buffers.end());
 
-    ClientManager::instance().ensure_no_client_uses_buffer(buffer);
+    buffer.notifyBufferDelete();
 
     m_buffer_trash.emplace_back(std::move(*it));
     m_buffers.erase(it);
@@ -80,8 +80,7 @@ void BufferManager::clear_buffer_trash()
     {
         // Do that again, to be tolerant in some corner cases, where a buffer is
         // deleted during its creation
-        ClientManager::instance().ensure_no_client_uses_buffer(*buffer);
-        ClientManager::instance().clear_window_trash();
+        buffer->notifyBufferClearTrash();
 
         buffer.reset();
     }

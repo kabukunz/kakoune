@@ -3,6 +3,7 @@
 
 #include "coord.hh"
 #include "flags.hh"
+#include "observable.h"
 #include "safe_ptr.hh"
 #include "scope.hh"
 #include "shared_string.hh"
@@ -40,7 +41,27 @@ constexpr Array<EnumDesc<ByteOrderMark>, 2> enum_desc(ByteOrderMark)
     } };
 }
 
+
 class Buffer;
+
+class BufferEvent {
+public:
+    BufferEvent(Buffer* buffer)
+        : m_buffer(buffer) {}
+
+    Buffer* buffer() const { return m_buffer; }
+private:
+    Buffer* m_buffer;
+};
+
+class BufferObserver {
+public:
+    virtual ~BufferObserver() {}
+
+    virtual void onBufferDelete(BufferEvent& ev) { }
+    virtual void onBufferClearTrash(BufferEvent& ev) { }
+};
+
 
 constexpr timespec InvalidTime = { -1, -1 };
 
@@ -96,7 +117,7 @@ using BufferLines = Vector<StringDataPtr, MemoryDomain::BufferContent>;
 // The Buffer class permits to read and mutate this file
 // representation. It also manage modifications undo/redo and
 // provides tools to deal with the line/column nature of text.
-class Buffer : public SafeCountable, public OptionManagerWatcher, public Scope
+class Buffer : public SafeCountable, public OptionManagerWatcher, public Scope, public base::Observable<BufferObserver>
 {
 public:
     enum class Flags
@@ -200,6 +221,9 @@ public:
     ConstArrayView<Change> changes_since(size_t timestamp) const;
 
     String debug_description() const;
+
+    void notifyBufferDelete();
+    void notifyBufferClearTrash();
 private:
 
     void on_option_changed(const Option& option) override;
