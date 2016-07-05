@@ -31,6 +31,7 @@ using std::max;
 
 struct NCursesWin : WINDOW {};
 
+// clang-format off
 static constexpr StringView assistant_cat[] =
     { R"(  ___            )",
       R"( (__ \           )",
@@ -53,6 +54,7 @@ static constexpr StringView assistant_clippy[] =
       " │╰─╯│  ",
       " ╰───╯  ",
       "        " };
+// clang-format on
 
 static void set_attribute(WINDOW* window, int attribute, bool on)
 {
