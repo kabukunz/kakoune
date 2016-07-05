@@ -42,12 +42,13 @@ endif()
 
 set(CURSES_NEED_NCURSESW TRUE)
 find_package(NCursesw REQUIRED)
+find_package(LibTermkey REQUIRED)
 
 include_directories("./src")
 file (GLOB kakoune_SOURCES src/*.cc)
 
-include_directories(${CURSES_INCLUDE_DIR})
+include_directories(${CURSES_INCLUDE_DIR} ${LIBTERMKEY_INCLUDE_DIR})
 add_executable(kak ${kakoune_SOURCES})
-target_link_libraries(kak PRIVATE ${CURSES_LIBRARY})
+target_link_libraries(kak PRIVATE ${CURSES_LIBRARY} ${LIBTERMKEY_LIBRARY})
 
 install(TARGETS kak RUNTIME DESTINATION ${BIN_DIR})
