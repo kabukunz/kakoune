@@ -1,0 +1,25 @@
+---
+BraceWrapping:   
+  AfterClass:      true
+  # Wrap control statements (if/for/while/switch/..).
+  AfterControlStatement: true
+  AfterEnum:       true
+  AfterFunction:   true
+  AfterNamespace:  true
+  AfterObjCDeclaration: true
+  AfterStruct:     true
+  AfterUnion:      true
+  BeforeCatch:     true
+  BeforeElse:      true
+  # Indent the wrapped braces themselves.
+  IndentBraces:    false
+BreakBeforeBraces: Custom
+ConstructorInitializerAllOnOneLineOrOnePerLine: true
+BreakConstructorInitializersBeforeComma: false
+AlwaysBreakTemplateDeclarations: false
+
+#BreakBeforeBraces: Stroustrup
+ColumnLimit: 80
+IndentWidth: 4
+Language: Cpp
+UseTab: Never
