@@ -1,13 +1,12 @@
 #ifndef context_hh_INCLUDED
 #define context_hh_INCLUDED
 
-#include "selection.hh"
-#include "optional.hh"
 #include "flags.hh"
+#include "optional.hh"
+#include "selection.hh"
 
 namespace Kakoune
 {
-
 class Window;
 class Buffer;
 class Client;
@@ -23,50 +22,55 @@ class AliasRegistry;
 struct NestedBool
 {
     void set() { m_count++; }
-    void unset() { kak_assert(m_count > 0); m_count--; }
+    void unset()
+    {
+        kak_assert(m_count > 0);
+        m_count--;
+    }
 
     operator bool() const { return m_count > 0; }
-private:
+   private:
     int m_count = 0;
 };
 
 struct ScopedSetBool
 {
-    ScopedSetBool(NestedBool& nested_bool, bool condition = true)
+    ScopedSetBool(NestedBool &nested_bool, bool condition = true)
         : m_nested_bool(nested_bool), m_condition(condition)
     {
-        if (m_condition)
-            m_nested_bool.set();
+        if (m_condition) m_nested_bool.set();
     }
 
     ~ScopedSetBool()
     {
-        if (m_condition)
-            m_nested_bool.unset();
+        if (m_condition) m_nested_bool.unset();
     }
 
-private:
-    NestedBool& m_nested_bool;
+   private:
+    NestedBool &m_nested_bool;
     bool m_condition;
 };
 
 struct JumpList
 {
     void push(SelectionList jump);
-    const SelectionList& forward();
-    const SelectionList& backward(const SelectionList& current);
-    void forget_buffer(Buffer& buffer);
+    const SelectionList &forward();
+    const SelectionList &backward(const SelectionList &current);
+    void forget_buffer(Buffer &buffer);
 
-    friend bool operator==(const JumpList& lhs, const JumpList& rhs)
+    friend bool operator==(const JumpList &lhs, const JumpList &rhs)
     {
         return lhs.m_jumps == rhs.m_jumps and lhs.m_current == rhs.m_current;
     }
 
-    friend bool operator!=(const JumpList& lhs, const JumpList& rhs) { return not (lhs == rhs); }
+    friend bool operator!=(const JumpList &lhs, const JumpList &rhs)
+    {
+        return not(lhs == rhs);
+    }
 
-private:
+   private:
     using Contents = Vector<SelectionList, MemoryDomain::Selections>;
-    Contents           m_jumps;
+    Contents m_jumps;
     size_t m_current = 0;
 };
 
@@ -78,79 +82,73 @@ private:
 // execution or a macro replay context.
 class Context
 {
-public:
+   public:
     enum class Flags
     {
         None = 0,
         Transient = 1,
     };
 
-    Context(InputHandler& input_handler, SelectionList selections,
-            Flags flags, String name = "");
+    Context(InputHandler &input_handler, SelectionList selections, Flags flags,
+            String name = "");
 
-    struct EmptyContextFlag {};
+    struct EmptyContextFlag
+    {
+    };
     explicit Context(EmptyContextFlag);
     ~Context();
 
-    Context(const Context&) = delete;
-    Context& operator=(const Context&) = delete;
+    Context(const Context &) = delete;
+    Context &operator=(const Context &) = delete;
 
-    Buffer& buffer() const;
+    Buffer &buffer() const;
     bool has_buffer() const { return (bool)m_selections; }
-
-    Window& window() const;
+    Window &window() const;
     bool has_window() const { return (bool)m_window; }
-
-    Client& client() const;
+    Client &client() const;
     bool has_client() const { return (bool)m_client; }
-
-    InputHandler& input_handler() const;
+    InputHandler &input_handler() const;
     bool has_input_handler() const { return (bool)m_input_handler; }
-
-    SelectionList& selections();
-    const SelectionList& selections() const;
-    Vector<String>  selections_content() const;
+    SelectionList &selections();
+    const SelectionList &selections() const;
+    Vector<String> selections_content() const;
 
     // Return potentially out of date selections
-    SelectionList& selections_write_only();
+    SelectionList &selections_write_only();
 
-    void change_buffer(Buffer& buffer);
+    void change_buffer(Buffer &buffer);
 
-    void set_client(Client& client);
-    void set_window(Window& window);
+    void set_client(Client &client);
+    void set_window(Window &window);
 
-    Scope& scope() const;
+    Scope &scope() const;
 
-    OptionManager& options() const { return scope().options(); }
-    HookManager& hooks()     const { return scope().hooks(); }
-    KeymapManager& keymaps() const { return scope().keymaps(); }
-    AliasRegistry& aliases() const { return scope().aliases(); }
-
+    OptionManager &options() const { return scope().options(); }
+    HookManager &hooks() const { return scope().hooks(); }
+    KeymapManager &keymaps() const { return scope().keymaps(); }
+    AliasRegistry &aliases() const { return scope().aliases(); }
     void print_status(DisplayLine status) const;
 
     StringView main_sel_register_value(StringView reg) const;
 
-    const String& name() const { return m_name; }
+    const String &name() const { return m_name; }
     void set_name(String name) { m_name = std::move(name); }
-
-    bool is_editing() const { return m_edition_level!= 0; }
+    bool is_editing() const { return m_edition_level != 0; }
     void disable_undo_handling() { m_edition_level = -1; }
+    NestedBool &user_hooks_disabled() { return m_user_hooks_disabled; }
+    const NestedBool &user_hooks_disabled() const
+    {
+        return m_user_hooks_disabled;
+    }
 
-    NestedBool& user_hooks_disabled() { return m_user_hooks_disabled; }
-    const NestedBool& user_hooks_disabled() const { return m_user_hooks_disabled; }
-
-    NestedBool& keymaps_disabled() { return m_keymaps_disabled; }
-    const NestedBool& keymaps_disabled() const { return m_keymaps_disabled; }
-
-    NestedBool& history_disabled() { return m_history_disabled; }
-    const NestedBool& history_disabled() const { return m_history_disabled; }
-
+    NestedBool &keymaps_disabled() { return m_keymaps_disabled; }
+    const NestedBool &keymaps_disabled() const { return m_keymaps_disabled; }
+    NestedBool &history_disabled() { return m_history_disabled; }
+    const NestedBool &history_disabled() const { return m_history_disabled; }
     Flags flags() const { return m_flags; }
-
-    JumpList& jump_list() { return m_jump_list; }
+    JumpList &jump_list() { return m_jump_list; }
     void push_jump() { m_jump_list.push(selections()); }
-
-private:
+   private:
     void begin_edition();
     void end_edition();
     int m_edition_level = 0;
@@ -160,8 +158,8 @@ private:
     Flags m_flags;
 
     SafePtr<InputHandler> m_input_handler;
-    SafePtr<Window>       m_window;
-    SafePtr<Client>       m_client;
+    SafePtr<Window> m_window;
+    SafePtr<Client> m_client;
 
     Optional<SelectionList> m_selections;
 
@@ -174,22 +172,23 @@ private:
     NestedBool m_history_disabled;
 };
 
-template<>
-struct WithBitOps<Context::Flags> : std::true_type {};
+template <> struct WithBitOps<Context::Flags> : std::true_type
+{
+};
 
 struct ScopedEdition
 {
-    ScopedEdition(Context& context)
+    ScopedEdition(Context &context)
         : m_context(context), m_buffer(&context.buffer())
-    { m_context.begin_edition(); }
+    {
+        m_context.begin_edition();
+    }
 
     ~ScopedEdition() { m_context.end_edition(); }
-
-    Context& context() const { return m_context; }
-private:
-    Context& m_context;
+    Context &context() const { return m_context; }
+   private:
+    Context &m_context;
     SafePtr<Buffer> m_buffer;
 };
-
 }
-#endif // context_hh_INCLUDED
+#endif  // context_hh_INCLUDED

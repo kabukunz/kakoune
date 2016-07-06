@@ -1,26 +1,26 @@
 #ifndef face_registry_hh_INCLUDED
 #define face_registry_hh_INCLUDED
 
-#include "face.hh"
-#include "utils.hh"
 #include "completion.hh"
+#include "face.hh"
 #include "unordered_map.hh"
+#include "utils.hh"
 
 namespace Kakoune
 {
-
 class FaceRegistry : public Singleton<FaceRegistry>
 {
-public:
+   public:
     FaceRegistry();
 
-    Face operator[](const String& facedesc);
-    void register_alias(const String& name, const String& facedesc,
+    Face operator[](const String &facedesc);
+    void register_alias(const String &name, const String &facedesc,
                         bool override = false);
 
     CandidateList complete_alias_name(StringView prefix,
                                       ByteCount cursor_pos) const;
-private:
+
+   private:
     struct FaceOrAlias
     {
         Face face;
@@ -33,13 +33,11 @@ private:
     AliasMap m_aliases;
 };
 
-inline Face get_face(const String& facedesc)
+inline Face get_face(const String &facedesc)
 {
-    if (FaceRegistry::has_instance())
-        return FaceRegistry::instance()[facedesc];
+    if (FaceRegistry::has_instance()) return FaceRegistry::instance()[facedesc];
     return Face{};
 }
-
 }
 
-#endif // face_registry_hh_INCLUDED
+#endif  // face_registry_hh_INCLUDED

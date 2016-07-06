@@ -22,14 +22,14 @@
 #include <unistd.h>
 
 constexpr char control(char c) { return c & 037; }
-
 namespace Kakoune
 {
-
 using std::min;
 using std::max;
 
-struct NCursesWin : WINDOW {};
+struct NCursesWin : WINDOW
+{
+};
 
 // clang-format off
 static constexpr StringView assistant_cat[] =
@@ -56,7 +56,7 @@ static constexpr StringView assistant_clippy[] =
       "        " };
 // clang-format on
 
-static void set_attribute(WINDOW* window, int attribute, bool on)
+static void set_attribute(WINDOW *window, int attribute, bool on)
 {
     if (on)
         wattron(window, attribute);
@@ -64,73 +64,97 @@ static void set_attribute(WINDOW* window, int attribute, bool on)
         wattroff(window, attribute);
 }
 
-template<typename T> T sq(T x) { return x * x; }
-
-constexpr struct { unsigned char r, g, b; } builtin_colors[] = {
-    {0x00,0x00,0x00}, {0x80,0x00,0x00}, {0x00,0x80,0x00}, {0x80,0x80,0x00},
-    {0x00,0x00,0x80}, {0x80,0x00,0x80}, {0x00,0x80,0x80}, {0xc0,0xc0,0xc0},
-    {0x80,0x80,0x80}, {0xff,0x00,0x00}, {0x00,0xff,0x00}, {0xff,0xff,0x00},
-    {0x00,0x00,0xff}, {0xff,0x00,0xff}, {0x00,0xff,0xff}, {0xff,0xff,0xff},
-    {0x00,0x00,0x00}, {0x00,0x00,0x5f}, {0x00,0x00,0x87}, {0x00,0x00,0xaf},
-    {0x00,0x00,0xd7}, {0x00,0x00,0xff}, {0x00,0x5f,0x00}, {0x00,0x5f,0x5f},
-    {0x00,0x5f,0x87}, {0x00,0x5f,0xaf}, {0x00,0x5f,0xd7}, {0x00,0x5f,0xff},
-    {0x00,0x87,0x00}, {0x00,0x87,0x5f}, {0x00,0x87,0x87}, {0x00,0x87,0xaf},
-    {0x00,0x87,0xd7}, {0x00,0x87,0xff}, {0x00,0xaf,0x00}, {0x00,0xaf,0x5f},
-    {0x00,0xaf,0x87}, {0x00,0xaf,0xaf}, {0x00,0xaf,0xd7}, {0x00,0xaf,0xff},
-    {0x00,0xd7,0x00}, {0x00,0xd7,0x5f}, {0x00,0xd7,0x87}, {0x00,0xd7,0xaf},
-    {0x00,0xd7,0xd7}, {0x00,0xd7,0xff}, {0x00,0xff,0x00}, {0x00,0xff,0x5f},
-    {0x00,0xff,0x87}, {0x00,0xff,0xaf}, {0x00,0xff,0xd7}, {0x00,0xff,0xff},
-    {0x5f,0x00,0x00}, {0x5f,0x00,0x5f}, {0x5f,0x00,0x87}, {0x5f,0x00,0xaf},
-    {0x5f,0x00,0xd7}, {0x5f,0x00,0xff}, {0x5f,0x5f,0x00}, {0x5f,0x5f,0x5f},
-    {0x5f,0x5f,0x87}, {0x5f,0x5f,0xaf}, {0x5f,0x5f,0xd7}, {0x5f,0x5f,0xff},
-    {0x5f,0x87,0x00}, {0x5f,0x87,0x5f}, {0x5f,0x87,0x87}, {0x5f,0x87,0xaf},
-    {0x5f,0x87,0xd7}, {0x5f,0x87,0xff}, {0x5f,0xaf,0x00}, {0x5f,0xaf,0x5f},
-    {0x5f,0xaf,0x87}, {0x5f,0xaf,0xaf}, {0x5f,0xaf,0xd7}, {0x5f,0xaf,0xff},
-    {0x5f,0xd7,0x00}, {0x5f,0xd7,0x5f}, {0x5f,0xd7,0x87}, {0x5f,0xd7,0xaf},
-    {0x5f,0xd7,0xd7}, {0x5f,0xd7,0xff}, {0x5f,0xff,0x00}, {0x5f,0xff,0x5f},
-    {0x5f,0xff,0x87}, {0x5f,0xff,0xaf}, {0x5f,0xff,0xd7}, {0x5f,0xff,0xff},
-    {0x87,0x00,0x00}, {0x87,0x00,0x5f}, {0x87,0x00,0x87}, {0x87,0x00,0xaf},
-    {0x87,0x00,0xd7}, {0x87,0x00,0xff}, {0x87,0x5f,0x00}, {0x87,0x5f,0x5f},
-    {0x87,0x5f,0x87}, {0x87,0x5f,0xaf}, {0x87,0x5f,0xd7}, {0x87,0x5f,0xff},
-    {0x87,0x87,0x00}, {0x87,0x87,0x5f}, {0x87,0x87,0x87}, {0x87,0x87,0xaf},
-    {0x87,0x87,0xd7}, {0x87,0x87,0xff}, {0x87,0xaf,0x00}, {0x87,0xaf,0x5f},
-    {0x87,0xaf,0x87}, {0x87,0xaf,0xaf}, {0x87,0xaf,0xd7}, {0x87,0xaf,0xff},
-    {0x87,0xd7,0x00}, {0x87,0xd7,0x5f}, {0x87,0xd7,0x87}, {0x87,0xd7,0xaf},
-    {0x87,0xd7,0xd7}, {0x87,0xd7,0xff}, {0x87,0xff,0x00}, {0x87,0xff,0x5f},
-    {0x87,0xff,0x87}, {0x87,0xff,0xaf}, {0x87,0xff,0xd7}, {0x87,0xff,0xff},
-    {0xaf,0x00,0x00}, {0xaf,0x00,0x5f}, {0xaf,0x00,0x87}, {0xaf,0x00,0xaf},
-    {0xaf,0x00,0xd7}, {0xaf,0x00,0xff}, {0xaf,0x5f,0x00}, {0xaf,0x5f,0x5f},
-    {0xaf,0x5f,0x87}, {0xaf,0x5f,0xaf}, {0xaf,0x5f,0xd7}, {0xaf,0x5f,0xff},
-    {0xaf,0x87,0x00}, {0xaf,0x87,0x5f}, {0xaf,0x87,0x87}, {0xaf,0x87,0xaf},
-    {0xaf,0x87,0xd7}, {0xaf,0x87,0xff}, {0xaf,0xaf,0x00}, {0xaf,0xaf,0x5f},
-    {0xaf,0xaf,0x87}, {0xaf,0xaf,0xaf}, {0xaf,0xaf,0xd7}, {0xaf,0xaf,0xff},
-    {0xaf,0xd7,0x00}, {0xaf,0xd7,0x5f}, {0xaf,0xd7,0x87}, {0xaf,0xd7,0xaf},
-    {0xaf,0xd7,0xd7}, {0xaf,0xd7,0xff}, {0xaf,0xff,0x00}, {0xaf,0xff,0x5f},
-    {0xaf,0xff,0x87}, {0xaf,0xff,0xaf}, {0xaf,0xff,0xd7}, {0xaf,0xff,0xff},
-    {0xd7,0x00,0x00}, {0xd7,0x00,0x5f}, {0xd7,0x00,0x87}, {0xd7,0x00,0xaf},
-    {0xd7,0x00,0xd7}, {0xd7,0x00,0xff}, {0xd7,0x5f,0x00}, {0xd7,0x5f,0x5f},
-    {0xd7,0x5f,0x87}, {0xd7,0x5f,0xaf}, {0xd7,0x5f,0xd7}, {0xd7,0x5f,0xff},
-    {0xd7,0x87,0x00}, {0xd7,0x87,0x5f}, {0xd7,0x87,0x87}, {0xd7,0x87,0xaf},
-    {0xd7,0x87,0xd7}, {0xd7,0x87,0xff}, {0xd7,0xaf,0x00}, {0xd7,0xaf,0x5f},
-    {0xd7,0xaf,0x87}, {0xd7,0xaf,0xaf}, {0xd7,0xaf,0xd7}, {0xd7,0xaf,0xff},
-    {0xd7,0xd7,0x00}, {0xd7,0xd7,0x5f}, {0xd7,0xd7,0x87}, {0xd7,0xd7,0xaf},
-    {0xd7,0xd7,0xd7}, {0xd7,0xd7,0xff}, {0xd7,0xff,0x00}, {0xd7,0xff,0x5f},
-    {0xd7,0xff,0x87}, {0xd7,0xff,0xaf}, {0xd7,0xff,0xd7}, {0xd7,0xff,0xff},
-    {0xff,0x00,0x00}, {0xff,0x00,0x5f}, {0xff,0x00,0x87}, {0xff,0x00,0xaf},
-    {0xff,0x00,0xd7}, {0xff,0x00,0xff}, {0xff,0x5f,0x00}, {0xff,0x5f,0x5f},
-    {0xff,0x5f,0x87}, {0xff,0x5f,0xaf}, {0xff,0x5f,0xd7}, {0xff,0x5f,0xff},
-    {0xff,0x87,0x00}, {0xff,0x87,0x5f}, {0xff,0x87,0x87}, {0xff,0x87,0xaf},
-    {0xff,0x87,0xd7}, {0xff,0x87,0xff}, {0xff,0xaf,0x00}, {0xff,0xaf,0x5f},
-    {0xff,0xaf,0x87}, {0xff,0xaf,0xaf}, {0xff,0xaf,0xd7}, {0xff,0xaf,0xff},
-    {0xff,0xd7,0x00}, {0xff,0xd7,0x5f}, {0xff,0xd7,0x87}, {0xff,0xd7,0xaf},
-    {0xff,0xd7,0xd7}, {0xff,0xd7,0xff}, {0xff,0xff,0x00}, {0xff,0xff,0x5f},
-    {0xff,0xff,0x87}, {0xff,0xff,0xaf}, {0xff,0xff,0xd7}, {0xff,0xff,0xff},
-    {0x08,0x08,0x08}, {0x12,0x12,0x12}, {0x1c,0x1c,0x1c}, {0x26,0x26,0x26},
-    {0x30,0x30,0x30}, {0x3a,0x3a,0x3a}, {0x44,0x44,0x44}, {0x4e,0x4e,0x4e},
-    {0x58,0x58,0x58}, {0x60,0x60,0x60}, {0x66,0x66,0x66}, {0x76,0x76,0x76},
-    {0x80,0x80,0x80}, {0x8a,0x8a,0x8a}, {0x94,0x94,0x94}, {0x9e,0x9e,0x9e},
-    {0xa8,0xa8,0xa8}, {0xb2,0xb2,0xb2}, {0xbc,0xbc,0xbc}, {0xc6,0xc6,0xc6},
-    {0xd0,0xd0,0xd0}, {0xda,0xda,0xda}, {0xe4,0xe4,0xe4}, {0xee,0xee,0xee},
+template <typename T> T sq(T x) { return x * x; }
+constexpr struct
+{
+    unsigned char r, g, b;
+} builtin_colors[] = {
+    {0x00, 0x00, 0x00}, {0x80, 0x00, 0x00}, {0x00, 0x80, 0x00},
+    {0x80, 0x80, 0x00}, {0x00, 0x00, 0x80}, {0x80, 0x00, 0x80},
+    {0x00, 0x80, 0x80}, {0xc0, 0xc0, 0xc0}, {0x80, 0x80, 0x80},
+    {0xff, 0x00, 0x00}, {0x00, 0xff, 0x00}, {0xff, 0xff, 0x00},
+    {0x00, 0x00, 0xff}, {0xff, 0x00, 0xff}, {0x00, 0xff, 0xff},
+    {0xff, 0xff, 0xff}, {0x00, 0x00, 0x00}, {0x00, 0x00, 0x5f},
+    {0x00, 0x00, 0x87}, {0x00, 0x00, 0xaf}, {0x00, 0x00, 0xd7},
+    {0x00, 0x00, 0xff}, {0x00, 0x5f, 0x00}, {0x00, 0x5f, 0x5f},
+    {0x00, 0x5f, 0x87}, {0x00, 0x5f, 0xaf}, {0x00, 0x5f, 0xd7},
+    {0x00, 0x5f, 0xff}, {0x00, 0x87, 0x00}, {0x00, 0x87, 0x5f},
+    {0x00, 0x87, 0x87}, {0x00, 0x87, 0xaf}, {0x00, 0x87, 0xd7},
+    {0x00, 0x87, 0xff}, {0x00, 0xaf, 0x00}, {0x00, 0xaf, 0x5f},
+    {0x00, 0xaf, 0x87}, {0x00, 0xaf, 0xaf}, {0x00, 0xaf, 0xd7},
+    {0x00, 0xaf, 0xff}, {0x00, 0xd7, 0x00}, {0x00, 0xd7, 0x5f},
+    {0x00, 0xd7, 0x87}, {0x00, 0xd7, 0xaf}, {0x00, 0xd7, 0xd7},
+    {0x00, 0xd7, 0xff}, {0x00, 0xff, 0x00}, {0x00, 0xff, 0x5f},
+    {0x00, 0xff, 0x87}, {0x00, 0xff, 0xaf}, {0x00, 0xff, 0xd7},
+    {0x00, 0xff, 0xff}, {0x5f, 0x00, 0x00}, {0x5f, 0x00, 0x5f},
+    {0x5f, 0x00, 0x87}, {0x5f, 0x00, 0xaf}, {0x5f, 0x00, 0xd7},
+    {0x5f, 0x00, 0xff}, {0x5f, 0x5f, 0x00}, {0x5f, 0x5f, 0x5f},
+    {0x5f, 0x5f, 0x87}, {0x5f, 0x5f, 0xaf}, {0x5f, 0x5f, 0xd7},
+    {0x5f, 0x5f, 0xff}, {0x5f, 0x87, 0x00}, {0x5f, 0x87, 0x5f},
+    {0x5f, 0x87, 0x87}, {0x5f, 0x87, 0xaf}, {0x5f, 0x87, 0xd7},
+    {0x5f, 0x87, 0xff}, {0x5f, 0xaf, 0x00}, {0x5f, 0xaf, 0x5f},
+    {0x5f, 0xaf, 0x87}, {0x5f, 0xaf, 0xaf}, {0x5f, 0xaf, 0xd7},
+    {0x5f, 0xaf, 0xff}, {0x5f, 0xd7, 0x00}, {0x5f, 0xd7, 0x5f},
+    {0x5f, 0xd7, 0x87}, {0x5f, 0xd7, 0xaf}, {0x5f, 0xd7, 0xd7},
+    {0x5f, 0xd7, 0xff}, {0x5f, 0xff, 0x00}, {0x5f, 0xff, 0x5f},
+    {0x5f, 0xff, 0x87}, {0x5f, 0xff, 0xaf}, {0x5f, 0xff, 0xd7},
+    {0x5f, 0xff, 0xff}, {0x87, 0x00, 0x00}, {0x87, 0x00, 0x5f},
+    {0x87, 0x00, 0x87}, {0x87, 0x00, 0xaf}, {0x87, 0x00, 0xd7},
+    {0x87, 0x00, 0xff}, {0x87, 0x5f, 0x00}, {0x87, 0x5f, 0x5f},
+    {0x87, 0x5f, 0x87}, {0x87, 0x5f, 0xaf}, {0x87, 0x5f, 0xd7},
+    {0x87, 0x5f, 0xff}, {0x87, 0x87, 0x00}, {0x87, 0x87, 0x5f},
+    {0x87, 0x87, 0x87}, {0x87, 0x87, 0xaf}, {0x87, 0x87, 0xd7},
+    {0x87, 0x87, 0xff}, {0x87, 0xaf, 0x00}, {0x87, 0xaf, 0x5f},
+    {0x87, 0xaf, 0x87}, {0x87, 0xaf, 0xaf}, {0x87, 0xaf, 0xd7},
+    {0x87, 0xaf, 0xff}, {0x87, 0xd7, 0x00}, {0x87, 0xd7, 0x5f},
+    {0x87, 0xd7, 0x87}, {0x87, 0xd7, 0xaf}, {0x87, 0xd7, 0xd7},
+    {0x87, 0xd7, 0xff}, {0x87, 0xff, 0x00}, {0x87, 0xff, 0x5f},
+    {0x87, 0xff, 0x87}, {0x87, 0xff, 0xaf}, {0x87, 0xff, 0xd7},
+    {0x87, 0xff, 0xff}, {0xaf, 0x00, 0x00}, {0xaf, 0x00, 0x5f},
+    {0xaf, 0x00, 0x87}, {0xaf, 0x00, 0xaf}, {0xaf, 0x00, 0xd7},
+    {0xaf, 0x00, 0xff}, {0xaf, 0x5f, 0x00}, {0xaf, 0x5f, 0x5f},
+    {0xaf, 0x5f, 0x87}, {0xaf, 0x5f, 0xaf}, {0xaf, 0x5f, 0xd7},
+    {0xaf, 0x5f, 0xff}, {0xaf, 0x87, 0x00}, {0xaf, 0x87, 0x5f},
+    {0xaf, 0x87, 0x87}, {0xaf, 0x87, 0xaf}, {0xaf, 0x87, 0xd7},
+    {0xaf, 0x87, 0xff}, {0xaf, 0xaf, 0x00}, {0xaf, 0xaf, 0x5f},
+    {0xaf, 0xaf, 0x87}, {0xaf, 0xaf, 0xaf}, {0xaf, 0xaf, 0xd7},
+    {0xaf, 0xaf, 0xff}, {0xaf, 0xd7, 0x00}, {0xaf, 0xd7, 0x5f},
+    {0xaf, 0xd7, 0x87}, {0xaf, 0xd7, 0xaf}, {0xaf, 0xd7, 0xd7},
+    {0xaf, 0xd7, 0xff}, {0xaf, 0xff, 0x00}, {0xaf, 0xff, 0x5f},
+    {0xaf, 0xff, 0x87}, {0xaf, 0xff, 0xaf}, {0xaf, 0xff, 0xd7},
+    {0xaf, 0xff, 0xff}, {0xd7, 0x00, 0x00}, {0xd7, 0x00, 0x5f},
+    {0xd7, 0x00, 0x87}, {0xd7, 0x00, 0xaf}, {0xd7, 0x00, 0xd7},
+    {0xd7, 0x00, 0xff}, {0xd7, 0x5f, 0x00}, {0xd7, 0x5f, 0x5f},
+    {0xd7, 0x5f, 0x87}, {0xd7, 0x5f, 0xaf}, {0xd7, 0x5f, 0xd7},
+    {0xd7, 0x5f, 0xff}, {0xd7, 0x87, 0x00}, {0xd7, 0x87, 0x5f},
+    {0xd7, 0x87, 0x87}, {0xd7, 0x87, 0xaf}, {0xd7, 0x87, 0xd7},
+    {0xd7, 0x87, 0xff}, {0xd7, 0xaf, 0x00}, {0xd7, 0xaf, 0x5f},
+    {0xd7, 0xaf, 0x87}, {0xd7, 0xaf, 0xaf}, {0xd7, 0xaf, 0xd7},
+    {0xd7, 0xaf, 0xff}, {0xd7, 0xd7, 0x00}, {0xd7, 0xd7, 0x5f},
+    {0xd7, 0xd7, 0x87}, {0xd7, 0xd7, 0xaf}, {0xd7, 0xd7, 0xd7},
+    {0xd7, 0xd7, 0xff}, {0xd7, 0xff, 0x00}, {0xd7, 0xff, 0x5f},
+    {0xd7, 0xff, 0x87}, {0xd7, 0xff, 0xaf}, {0xd7, 0xff, 0xd7},
+    {0xd7, 0xff, 0xff}, {0xff, 0x00, 0x00}, {0xff, 0x00, 0x5f},
+    {0xff, 0x00, 0x87}, {0xff, 0x00, 0xaf}, {0xff, 0x00, 0xd7},
+    {0xff, 0x00, 0xff}, {0xff, 0x5f, 0x00}, {0xff, 0x5f, 0x5f},
+    {0xff, 0x5f, 0x87}, {0xff, 0x5f, 0xaf}, {0xff, 0x5f, 0xd7},
+    {0xff, 0x5f, 0xff}, {0xff, 0x87, 0x00}, {0xff, 0x87, 0x5f},
+    {0xff, 0x87, 0x87}, {0xff, 0x87, 0xaf}, {0xff, 0x87, 0xd7},
+    {0xff, 0x87, 0xff}, {0xff, 0xaf, 0x00}, {0xff, 0xaf, 0x5f},
+    {0xff, 0xaf, 0x87}, {0xff, 0xaf, 0xaf}, {0xff, 0xaf, 0xd7},
+    {0xff, 0xaf, 0xff}, {0xff, 0xd7, 0x00}, {0xff, 0xd7, 0x5f},
+    {0xff, 0xd7, 0x87}, {0xff, 0xd7, 0xaf}, {0xff, 0xd7, 0xd7},
+    {0xff, 0xd7, 0xff}, {0xff, 0xff, 0x00}, {0xff, 0xff, 0x5f},
+    {0xff, 0xff, 0x87}, {0xff, 0xff, 0xaf}, {0xff, 0xff, 0xd7},
+    {0xff, 0xff, 0xff}, {0x08, 0x08, 0x08}, {0x12, 0x12, 0x12},
+    {0x1c, 0x1c, 0x1c}, {0x26, 0x26, 0x26}, {0x30, 0x30, 0x30},
+    {0x3a, 0x3a, 0x3a}, {0x44, 0x44, 0x44}, {0x4e, 0x4e, 0x4e},
+    {0x58, 0x58, 0x58}, {0x60, 0x60, 0x60}, {0x66, 0x66, 0x66},
+    {0x76, 0x76, 0x76}, {0x80, 0x80, 0x80}, {0x8a, 0x8a, 0x8a},
+    {0x94, 0x94, 0x94}, {0x9e, 0x9e, 0x9e}, {0xa8, 0xa8, 0xa8},
+    {0xb2, 0xb2, 0xb2}, {0xbc, 0xbc, 0xbc}, {0xc6, 0xc6, 0xc6},
+    {0xd0, 0xd0, 0xd0}, {0xda, 0xda, 0xda}, {0xe4, 0xe4, 0xe4},
+    {0xee, 0xee, 0xee},
 };
 
 int NCursesUI::get_color(Color color)
@@ -141,11 +165,8 @@ int NCursesUI::get_color(Color color)
     else if (can_change_color() and COLORS > 16)
     {
         kak_assert(color.color == Color::RGB);
-        if (m_next_color > COLORS)
-            m_next_color = 16;
-        init_color(m_next_color,
-                   color.r * 1000 / 255,
-                   color.g * 1000 / 255,
+        if (m_next_color > COLORS) m_next_color = 16;
+        init_color(m_next_color, color.r * 1000 / 255, color.g * 1000 / 255,
                    color.b * 1000 / 255);
         m_colors[color] = m_next_color;
         return m_next_color++;
@@ -157,10 +178,9 @@ int NCursesUI::get_color(Color color)
         int closestCol = -1;
         for (int i = 0; i < std::min(256, COLORS); ++i)
         {
-            auto& col = builtin_colors[i];
-            int dist = sq(color.r - col.r)
-                     + sq(color.g - col.g)
-                     + sq(color.b - col.b);
+            auto &col = builtin_colors[i];
+            int dist =
+                sq(color.r - col.r) + sq(color.g - col.g) + sq(color.b - col.b);
             if (dist < lowestDist)
             {
                 lowestDist = dist;
@@ -171,7 +191,7 @@ int NCursesUI::get_color(Color color)
     }
 }
 
-int NCursesUI::get_color_pair(const Face& face)
+int NCursesUI::get_color_pair(const Face &face)
 {
     static int next_pair = 1;
 
@@ -187,17 +207,15 @@ int NCursesUI::get_color_pair(const Face& face)
     }
 }
 
-void NCursesUI::set_face(NCursesWin* window, Face face, const Face& default_face)
+void NCursesUI::set_face(NCursesWin *window, Face face,
+                         const Face &default_face)
 {
     static int current_pair = -1;
 
-    if (current_pair != -1)
-        wattroff(window, COLOR_PAIR(current_pair));
+    if (current_pair != -1) wattroff(window, COLOR_PAIR(current_pair));
 
-    if (face.fg == Color::Default)
-        face.fg = default_face.fg;
-    if (face.bg == Color::Default)
-        face.bg = default_face.bg;
+    if (face.fg == Color::Default) face.fg = default_face.fg;
+    if (face.bg == Color::Default) face.bg = default_face.bg;
 
     if (face.fg != Color::Default or face.bg != Color::Default)
     {
@@ -210,9 +228,9 @@ void NCursesUI::set_face(NCursesWin* window, Face face, const Face& default_face
     set_attribute(window, A_BLINK, face.attributes & Attribute::Blink);
     set_attribute(window, A_BOLD, face.attributes & Attribute::Bold);
     set_attribute(window, A_DIM, face.attributes & Attribute::Dim);
-    #if defined(A_ITALIC)
+#if defined(A_ITALIC)
     set_attribute(window, A_ITALIC, face.attributes & Attribute::Italic);
-    #endif
+#endif
 }
 
 static sig_atomic_t resize_pending = 0;
@@ -224,21 +242,21 @@ void on_term_resize(int)
 }
 
 NCursesUI::NCursesUI()
-    : m_stdin_watcher{0, [this](FDWatcher&, EventMode mode) {
-        if (m_input_callback)
-            m_input_callback(mode);
-      }},
+    : m_stdin_watcher{0,
+                      [this](FDWatcher &, EventMode mode) {
+                          if (m_input_callback) m_input_callback(mode);
+                      }},
       m_assistant(assistant_clippy),
       m_colors{
-        { Color::Default, -1 },
-        { Color::Black,   COLOR_BLACK },
-        { Color::Red,     COLOR_RED },
-        { Color::Green,   COLOR_GREEN },
-        { Color::Yellow,  COLOR_YELLOW },
-        { Color::Blue,    COLOR_BLUE },
-        { Color::Magenta, COLOR_MAGENTA },
-        { Color::Cyan,    COLOR_CYAN },
-        { Color::White,   COLOR_WHITE },
+          {Color::Default, -1},
+          {Color::Black, COLOR_BLACK},
+          {Color::Red, COLOR_RED},
+          {Color::Green, COLOR_GREEN},
+          {Color::Yellow, COLOR_YELLOW},
+          {Color::Blue, COLOR_BLUE},
+          {Color::Magenta, COLOR_MAGENTA},
+          {Color::Cyan, COLOR_CYAN},
+          {Color::White, COLOR_WHITE},
       }
 {
     initscr();
@@ -268,11 +286,11 @@ NCursesUI::~NCursesUI()
     set_signal_handler(SIGCONT, SIG_DFL);
 }
 
-void NCursesUI::Window::create(const CharCoord& p, const CharCoord& s)
+void NCursesUI::Window::create(const CharCoord &p, const CharCoord &s)
 {
     pos = p;
     size = s;
-    win = (NCursesWin*)newpad((int)size.line, (int)size.column);
+    win = (NCursesWin *)newpad((int)size.line, (int)size.column);
 }
 
 void NCursesUI::Window::destroy()
@@ -285,18 +303,17 @@ void NCursesUI::Window::destroy()
 
 void NCursesUI::Window::refresh()
 {
-    if (not win)
-        return;
+    if (not win) return;
 
-    CharCoord max_pos = pos + size - CharCoord{1,1};
-    pnoutrefresh(win, 0, 0, (int)pos.line, (int)pos.column,
-                 (int)max_pos.line, (int)max_pos.column);
+    CharCoord max_pos = pos + size - CharCoord{1, 1};
+    pnoutrefresh(win, 0, 0, (int)pos.line, (int)pos.column, (int)max_pos.line,
+                 (int)max_pos.column);
 }
 
 void NCursesUI::redraw()
 {
-    pnoutrefresh(m_window, 0, 0, 0, 0,
-                 (int)m_dimensions.line + 1, (int)m_dimensions.column);
+    pnoutrefresh(m_window, 0, 0, 0, 0, (int)m_dimensions.line + 1,
+                 (int)m_dimensions.column);
     m_menu.refresh();
     m_info.refresh();
     doupdate();
@@ -304,36 +321,33 @@ void NCursesUI::redraw()
 
 void NCursesUI::refresh(bool force)
 {
-    if (force)
-        redrawwin(m_window);
+    if (force) redrawwin(m_window);
 
-    if (m_dirty or force)
-        redraw();
+    if (m_dirty or force) redraw();
     m_dirty = false;
 }
 
-void add_str(WINDOW* win, StringView str)
+void add_str(WINDOW *win, StringView str)
 {
     waddnstr(win, str.begin(), (int)str.length());
 }
 
-void NCursesUI::draw_line(NCursesWin* window, const DisplayLine& line,
+void NCursesUI::draw_line(NCursesWin *window, const DisplayLine &line,
                           CharCount col_index, CharCount max_column,
-                          const Face& default_face)
+                          const Face &default_face)
 {
-    for (const DisplayAtom& atom : line)
+    for (const DisplayAtom &atom : line)
     {
         set_face(window, atom.face, default_face);
 
         StringView content = atom.content();
-        if (content.empty())
-            continue;
+        if (content.empty()) continue;
 
         const auto remaining_columns = max_column - col_index;
         if (content.back() == '\n' and
             content.char_length() - 1 < remaining_columns)
         {
-            add_str(window, content.substr(0, content.length()-1));
+            add_str(window, content.substr(0, content.length() - 1));
             waddch(window, ' ');
         }
         else
@@ -347,16 +361,15 @@ void NCursesUI::draw_line(NCursesWin* window, const DisplayLine& line,
 
 static const DisplayLine empty_line = String(" ");
 
-void NCursesUI::draw(const DisplayBuffer& display_buffer,
-                     const Face& default_face,
-                     const Face& padding_face)
+void NCursesUI::draw(const DisplayBuffer &display_buffer,
+                     const Face &default_face, const Face &padding_face)
 {
     wbkgdset(m_window, COLOR_PAIR(get_color_pair(default_face)));
 
     check_resize();
 
     LineCount line_index = m_status_on_top ? 1 : 0;
-    for (const DisplayLine& line : display_buffer.lines())
+    for (const DisplayLine &line : display_buffer.lines())
     {
         wmove(m_window, (int)line_index, 0);
         wclrtoeol(m_window);
@@ -377,9 +390,9 @@ void NCursesUI::draw(const DisplayBuffer& display_buffer,
     m_dirty = true;
 }
 
-void NCursesUI::draw_status(const DisplayLine& status_line,
-                            const DisplayLine& mode_line,
-                            const Face& default_face)
+void NCursesUI::draw_status(const DisplayLine &status_line,
+                            const DisplayLine &mode_line,
+                            const Face &default_face)
 {
     const int status_line_pos = m_status_on_top ? 0 : (int)m_dimensions.line;
     wmove(m_window, status_line_pos, 0);
@@ -401,19 +414,19 @@ void NCursesUI::draw_status(const DisplayLine& status_line,
     {
         DisplayLine trimmed_mode_line = mode_line;
         trimmed_mode_line.trim(mode_len + 2 - remaining, remaining - 2, false);
-        trimmed_mode_line.insert(trimmed_mode_line.begin(), { "…" });
+        trimmed_mode_line.insert(trimmed_mode_line.begin(), {"…"});
         kak_assert(trimmed_mode_line.length() == remaining - 1);
 
         CharCount col = m_dimensions.column - remaining + 1;
         wmove(m_window, status_line_pos, (int)col);
-        draw_line(m_window, trimmed_mode_line, col, m_dimensions.column, default_face);
+        draw_line(m_window, trimmed_mode_line, col, m_dimensions.column,
+                  default_face);
     }
 
     if (m_set_title)
     {
         String title = "\033]2;";
-        for (auto& atom : mode_line)
-            title += atom.content();
+        for (auto &atom : mode_line) title += atom.content();
         title += " - Kakoune\007";
         fputs(title.c_str(), stdout);
         fflush(stdout);
@@ -424,15 +437,14 @@ void NCursesUI::draw_status(const DisplayLine& status_line,
 
 void NCursesUI::check_resize(bool force)
 {
-    if (not force and not resize_pending)
-        return;
+    if (not force and not resize_pending) return;
 
     resize_pending = 0;
 
     const int fd = open("/dev/tty", O_RDWR);
-    auto close_fd = on_scope_end([fd]{ close(fd); });
+    auto close_fd = on_scope_end([fd] { close(fd); });
     winsize ws;
-    if (ioctl(fd, TIOCGWINSZ, (void*)&ws) == 0)
+    if (ioctl(fd, TIOCGWINSZ, (void *)&ws) == 0)
     {
         const bool info = (bool)m_info;
         const bool menu = (bool)m_menu;
@@ -442,14 +454,13 @@ void NCursesUI::check_resize(bool force)
 
         resize_term(ws.ws_row, ws.ws_col);
 
-        m_window = (NCursesWin*)newpad(ws.ws_row, ws.ws_col);
+        m_window = (NCursesWin *)newpad(ws.ws_row, ws.ws_col);
         intrflush(m_window, false);
         keypad(m_window, true);
 
-        m_dimensions = CharCoord{ws.ws_row-1, ws.ws_col};
+        m_dimensions = CharCoord{ws.ws_row - 1, ws.ws_col};
 
-        if (char* csr = tigetstr((char*)"csr"))
-            putp(tparm(csr, 0, ws.ws_row));
+        if (char *csr = tigetstr((char *)"csr")) putp(tparm(csr, 0, ws.ws_row));
 
         if (menu)
         {
@@ -457,7 +468,8 @@ void NCursesUI::check_resize(bool force)
             menu_show(items, m_menu.anchor, m_menu.fg, m_menu.bg, m_menu.style);
         }
         if (info)
-            info_show(m_info.title, m_info.content, m_info.anchor, m_info.face, m_info.style);
+            info_show(m_info.title, m_info.content, m_info.anchor, m_info.face,
+                      m_info.style);
     }
     else
         kak_assert(false);
@@ -473,8 +485,7 @@ bool NCursesUI::is_key_available()
 
     wtimeout(m_window, 0);
     const int c = wgetch(m_window);
-    if (c != ERR)
-        ungetch(c);
+    if (c != ERR) ungetch(c);
     wtimeout(m_window, -1);
     return c != ERR;
 }
@@ -490,11 +501,13 @@ Key NCursesUI::get_key()
         MEVENT ev;
         if (getmouse(&ev) == OK)
         {
-            CharCoord pos{ ev.y - (m_status_on_top ? 1 : 0), ev.x };
+            CharCoord pos{ev.y - (m_status_on_top ? 1 : 0), ev.x};
             if (BUTTON_PRESS(ev.bstate, 1)) return mouse_press(pos);
             if (BUTTON_RELEASE(ev.bstate, 1)) return mouse_release(pos);
-            if (BUTTON_PRESS(ev.bstate, m_wheel_down_button)) return mouse_wheel_down(pos);
-            if (BUTTON_PRESS(ev.bstate, m_wheel_up_button)) return mouse_wheel_up(pos);
+            if (BUTTON_PRESS(ev.bstate, m_wheel_down_button))
+                return mouse_wheel_down(pos);
+            if (BUTTON_PRESS(ev.bstate, m_wheel_up_button))
+                return mouse_wheel_up(pos);
             return mouse_pos(pos);
         }
     }
@@ -512,14 +525,17 @@ Key NCursesUI::get_key()
     {
         wtimeout(m_window, 0);
         const Codepoint new_c = wgetch(m_window);
-        if (new_c == '[') // potential CSI
+        if (new_c == '[')  // potential CSI
         {
             const Codepoint csi_val = wgetch(m_window);
             switch (csi_val)
             {
-                case 'I': return Key::FocusIn;
-                case 'O': return Key::FocusOut;
-                default: break; // nothing
+                case 'I':
+                    return Key::FocusIn;
+                case 'O':
+                    return Key::FocusOut;
+                default:
+                    break;  // nothing
             }
         }
         wtimeout(m_window, -1);
@@ -532,58 +548,65 @@ Key NCursesUI::get_key()
         else
             return Key::Escape;
     }
-    else switch (c)
-    {
-    case KEY_BACKSPACE: case 127: return Key::Backspace;
-    case KEY_DC: return Key::Delete;
-    case KEY_UP: return Key::Up;
-    case KEY_DOWN: return Key::Down;
-    case KEY_LEFT: return Key::Left;
-    case KEY_RIGHT: return Key::Right;
-    case KEY_PPAGE: return Key::PageUp;
-    case KEY_NPAGE: return Key::PageDown;
-    case KEY_HOME: return Key::Home;
-    case KEY_END: return Key::End;
-    case KEY_BTAB: return Key::BackTab;
-    case KEY_RESIZE: return resize(m_dimensions);
-    }
+    else
+        switch (c)
+        {
+            case KEY_BACKSPACE:
+            case 127:
+                return Key::Backspace;
+            case KEY_DC:
+                return Key::Delete;
+            case KEY_UP:
+                return Key::Up;
+            case KEY_DOWN:
+                return Key::Down;
+            case KEY_LEFT:
+                return Key::Left;
+            case KEY_RIGHT:
+                return Key::Right;
+            case KEY_PPAGE:
+                return Key::PageUp;
+            case KEY_NPAGE:
+                return Key::PageDown;
+            case KEY_HOME:
+                return Key::Home;
+            case KEY_END:
+                return Key::End;
+            case KEY_BTAB:
+                return Key::BackTab;
+            case KEY_RESIZE:
+                return resize(m_dimensions);
+        }
 
     for (int i = 0; i < 12; ++i)
     {
-        if (c == KEY_F(i+1))
-            return Key::F1 + i;
+        if (c == KEY_F(i + 1)) return Key::F1 + i;
     }
 
     if (c >= 0 and c < 256)
     {
-       ungetch(c);
-       struct getch_iterator
-       {
-           getch_iterator(WINDOW* win) : window(win) {}
-           int operator*() { return wgetch(window); }
-           getch_iterator& operator++() { return *this; }
-           getch_iterator& operator++(int) { return *this; }
-           bool operator== (const getch_iterator&) const { return false; }
-
-            WINDOW* window;
-       };
-       return utf8::codepoint(getch_iterator{m_window}, getch_iterator{m_window});
+        ungetch(c);
+        struct getch_iterator
+        {
+            getch_iterator(WINDOW *win) : window(win) {}
+            int operator*() { return wgetch(window); }
+            getch_iterator &operator++() { return *this; }
+            getch_iterator &operator++(int) { return *this; }
+            bool operator==(const getch_iterator &) const { return false; }
+            WINDOW *window;
+        };
+        return utf8::codepoint(getch_iterator{m_window},
+                               getch_iterator{m_window});
     }
     return Key::Invalid;
 }
 
-template<typename T>
-T div_round_up(T a, T b)
-{
-    return (a - T(1)) / b + T(1);
-}
-
+template <typename T> T div_round_up(T a, T b) { return (a - T(1)) / b + T(1); }
 void NCursesUI::draw_menu()
 {
     // menu show may have not created the window if it did not fit.
     // so be tolerant.
-    if (not m_menu)
-        return;
+    if (not m_menu) return;
 
     const auto menu_bg = get_color_pair(m_menu.bg);
     wattron(m_menu.win, COLOR_PAIR(menu_bg));
@@ -591,13 +614,13 @@ void NCursesUI::draw_menu()
 
     const int item_count = (int)m_menu.items.size();
     const LineCount menu_lines = div_round_up(item_count, m_menu.columns);
-    const LineCount& win_height = m_menu.size.line;
+    const LineCount &win_height = m_menu.size.line;
     kak_assert(win_height <= menu_lines);
 
     const CharCount column_width = (m_menu.size.column - 1) / m_menu.columns;
 
-    const LineCount mark_height = min(div_round_up(sq(win_height), menu_lines),
-                                      win_height);
+    const LineCount mark_height =
+        min(div_round_up(sq(win_height), menu_lines), win_height);
     const LineCount mark_line = (win_height - mark_height) * m_menu.top_line /
                                 max(1_line, menu_lines - win_height);
     for (auto line = 0_line; line < win_height; ++line)
@@ -605,19 +628,18 @@ void NCursesUI::draw_menu()
         wmove(m_menu.win, (int)line, 0);
         for (int col = 0; col < m_menu.columns; ++col)
         {
-            const int item_idx = (int)(m_menu.top_line + line) * m_menu.columns
-                                 + col;
-            if (item_idx >= item_count)
-                break;
+            const int item_idx =
+                (int)(m_menu.top_line + line) * m_menu.columns + col;
+            if (item_idx >= item_count) break;
 
-            const DisplayLine& item = m_menu.items[item_idx];
+            const DisplayLine &item = m_menu.items[item_idx];
             draw_line(m_menu.win, item, 0, column_width,
                       item_idx == m_menu.selected_item ? m_menu.fg : m_menu.bg);
             const CharCount pad = column_width - item.length();
             add_str(m_menu.win, String{' ', pad});
         }
-        const bool is_mark = line >= mark_line and
-                             line < mark_line + mark_height;
+        const bool is_mark =
+            line >= mark_line and line < mark_line + mark_height;
         wclrtoeol(m_menu.win);
         wmove(m_menu.win, (int)line, (int)m_menu.size.column - 1);
         wattron(m_menu.win, COLOR_PAIR(menu_bg));
@@ -626,9 +648,8 @@ void NCursesUI::draw_menu()
     m_dirty = true;
 }
 
-void NCursesUI::menu_show(ConstArrayView<DisplayLine> items,
-                          CharCoord anchor, Face fg, Face bg,
-                          MenuStyle style)
+void NCursesUI::menu_show(ConstArrayView<DisplayLine> items, CharCoord anchor,
+                          Face fg, Face bg, MenuStyle style)
 {
     menu_hide();
 
@@ -644,24 +665,23 @@ void NCursesUI::menu_show(ConstArrayView<DisplayLine> items,
 
     CharCoord maxsize = m_dimensions;
     maxsize.column -= anchor.column;
-    if (maxsize.column <= 2)
-        return;
+    if (maxsize.column <= 2) return;
 
     const int item_count = items.size();
-    m_menu.items.clear(); // make sure it is empty
+    m_menu.items.clear();  // make sure it is empty
     m_menu.items.reserve(item_count);
     CharCount longest = 1;
-    for (auto& item : items)
-        longest = max(longest, item.length());
+    for (auto &item : items) longest = max(longest, item.length());
 
     const bool is_prompt = style == MenuStyle::Prompt;
-    m_menu.columns = is_prompt ? max((int)((maxsize.column-1) / (longest+1)), 1) : 1;
+    m_menu.columns =
+        is_prompt ? max((int)((maxsize.column - 1) / (longest + 1)), 1) : 1;
 
-    CharCount maxlen = maxsize.column-1;
+    CharCount maxlen = maxsize.column - 1;
     if (m_menu.columns > 1 and item_count > 1)
         maxlen = maxlen / m_menu.columns - 1;
 
-    for (auto& item : items)
+    for (auto &item : items)
     {
         m_menu.items.push_back(item);
         m_menu.items.back().trim(0, maxlen, false);
@@ -671,18 +691,17 @@ void NCursesUI::menu_show(ConstArrayView<DisplayLine> items,
     int height = min(10, div_round_up(item_count, m_menu.columns));
 
     int line = (int)anchor.line + 1;
-    if (line + height >= (int)maxsize.line)
-        line = (int)anchor.line - height;
+    if (line + height >= (int)maxsize.line) line = (int)anchor.line - height;
     m_menu.selected_item = item_count;
     m_menu.top_line = 0;
 
-    auto width = is_prompt ? maxsize.column : min(longest+1, maxsize.column);
+    auto width = is_prompt ? maxsize.column : min(longest + 1, maxsize.column);
     m_menu.create({line, anchor.column}, {height, width});
     draw_menu();
 
     if (m_info)
-        info_show(m_info.title, m_info.content,
-                  m_info.anchor, m_info.face, m_info.style);
+        info_show(m_info.title, m_info.content, m_info.anchor, m_info.face,
+                  m_info.style);
 }
 
 void NCursesUI::menu_select(int selected)
@@ -700,8 +719,7 @@ void NCursesUI::menu_select(int selected)
         const LineCount selected_line = m_menu.selected_item / m_menu.columns;
         const LineCount win_height = m_menu.size.line;
         kak_assert(menu_lines >= win_height);
-        if (selected_line < m_menu.top_line)
-            m_menu.top_line = selected_line;
+        if (selected_line < m_menu.top_line) m_menu.top_line = selected_line;
         if (selected_line >= m_menu.top_line + win_height)
             m_menu.top_line = min(selected_line, menu_lines - win_height);
     }
@@ -710,8 +728,7 @@ void NCursesUI::menu_select(int selected)
 
 void NCursesUI::menu_hide()
 {
-    if (not m_menu)
-        return;
+    if (not m_menu) return;
     m_menu.items.clear();
     mark_dirty(m_menu);
     m_menu.destroy();
@@ -720,16 +737,15 @@ void NCursesUI::menu_hide()
 
 static CharCoord compute_needed_size(StringView str)
 {
-    CharCoord res{1,0};
+    CharCoord res{1, 0};
     CharCount line_len = 0;
-    for (auto it = str.begin(), end = str.end();
-         it != end; it = utf8::next(it, end))
+    for (auto it = str.begin(), end = str.end(); it != end;
+         it = utf8::next(it, end))
     {
         if (*it == '\n')
         {
             // ignore last '\n', no need to show an empty line
-            if (it+1 == end)
-                break;
+            if (it + 1 == end) break;
 
             res.column = max(res.column, line_len);
             line_len = 0;
@@ -752,8 +768,7 @@ static CharCoord compute_pos(CharCoord anchor, CharCoord size,
     if (prefer_above)
     {
         pos = anchor - CharCoord{size.line};
-        if (pos.line < 0)
-            prefer_above = false;
+        if (pos.line < 0) prefer_above = false;
     }
     auto rect_end = rect.pos + rect.size;
     if (not prefer_above)
@@ -772,13 +787,14 @@ static CharCoord compute_pos(CharCoord anchor, CharCoord size,
         CharCoord end = pos + size;
 
         // check intersection
-        if (not (end.line < to_avoid.pos.line or end.column < to_avoid.pos.column or
-                 pos.line > to_avoid_end.line or pos.column > to_avoid_end.column))
+        if (not(end.line < to_avoid.pos.line or
+                end.column < to_avoid.pos.column or
+                pos.line > to_avoid_end.line or
+                pos.column > to_avoid_end.column))
         {
             pos.line = min(to_avoid.pos.line, anchor.line) - size.line;
             // if above does not work, try below
-            if (pos.line < 0)
-                pos.line = max(to_avoid_end.line, anchor.line);
+            if (pos.line < 0) pos.line = max(to_avoid_end.line, anchor.line);
         }
     }
 
@@ -790,27 +806,26 @@ String make_info_box(StringView title, StringView message, CharCount max_width,
 {
     CharCoord assistant_size;
     if (not assistant.empty())
-        assistant_size = { (int)assistant.size(), assistant[0].char_length() };
+        assistant_size = {(int)assistant.size(), assistant[0].char_length()};
 
     String result;
 
     const CharCount max_bubble_width = max_width - assistant_size.column - 6;
-    if (max_bubble_width < 4)
-        return result;
+    if (max_bubble_width < 4) return result;
 
     Vector<StringView> lines = wrap_lines(message, max_bubble_width);
 
     CharCount bubble_width = title.char_length() + 2;
-    for (auto& line : lines)
+    for (auto &line : lines)
         bubble_width = max(bubble_width, line.char_length());
 
-    auto line_count = max(assistant_size.line-1,
-                          LineCount{(int)lines.size()} + 2);
+    auto line_count =
+        max(assistant_size.line - 1, LineCount{(int)lines.size()} + 2);
     for (LineCount i = 0; i < line_count; ++i)
     {
         constexpr Codepoint dash{L'─'};
         if (not assistant.empty())
-            result += assistant[min((int)i, (int)assistant_size.line-1)];
+            result += assistant[min((int)i, (int)assistant_size.line - 1)];
         if (i == 0)
         {
             if (title.empty())
@@ -820,12 +835,12 @@ String make_info_box(StringView title, StringView message, CharCount max_width,
                 auto dash_count = bubble_width - title.char_length() - 2;
                 String left{dash, dash_count / 2};
                 String right{dash, dash_count - dash_count / 2};
-                result += "╭─" + left + "┤" + title +"├" + right +"─╮";
+                result += "╭─" + left + "┤" + title + "├" + right + "─╮";
             }
         }
         else if (i < lines.size() + 1)
         {
-            auto& line = lines[(int)i - 1];
+            auto &line = lines[(int)i - 1];
             const CharCount padding = bubble_width - line.char_length();
             result += "│ " + line + String{' ', padding} + " │";
         }
@@ -854,21 +869,19 @@ void NCursesUI::info_show(StringView title, StringView content,
         info_box = make_info_box(m_info.title, m_info.content,
                                  m_dimensions.column, m_assistant);
         anchor = CharCoord{m_status_on_top ? 0 : m_dimensions.line,
-                           m_dimensions.column-1};
+                           m_dimensions.column - 1};
     }
     else
     {
-        if (m_status_on_top)
-            anchor.line += 1;
+        if (m_status_on_top) anchor.line += 1;
         CharCount col = anchor.column;
         if (style == InfoStyle::MenuDoc and m_menu)
             col = m_menu.pos.column + m_menu.size.column;
 
         const CharCount max_width = m_dimensions.column - col;
-        if (max_width < 4)
-            return;
+        if (max_width < 4) return;
 
-        for (auto& line : wrap_lines(m_info.content, max_width))
+        for (auto &line : wrap_lines(m_info.content, max_width))
             info_box += line + "\n";
     }
 
@@ -877,11 +890,11 @@ void NCursesUI::info_show(StringView title, StringView content,
     if (style == InfoStyle::MenuDoc and m_menu)
         pos = m_menu.pos + CharCoord{0_line, m_menu.size.column};
     else
-        pos = compute_pos(anchor, size, rect, m_menu, style == InfoStyle::InlineAbove);
+        pos = compute_pos(anchor, size, rect, m_menu,
+                          style == InfoStyle::InlineAbove);
 
     // The info box does not fit
-    if (pos < rect.pos or pos + size > rect.pos + rect.size)
-        return;
+    if (pos < rect.pos or pos + size > rect.pos + rect.size) return;
 
     m_info.create(pos, size);
 
@@ -893,8 +906,7 @@ void NCursesUI::info_show(StringView title, StringView content,
         wmove(m_info.win, line++, 0);
         auto eol = std::find_if(it, end, [](char c) { return c == '\n'; });
         add_str(m_info.win, {it, eol});
-        if (eol == end)
-           break;
+        if (eol == end) break;
         it = eol + 1;
     }
     m_dirty = true;
@@ -902,37 +914,27 @@ void NCursesUI::info_show(StringView title, StringView content,
 
 void NCursesUI::info_hide()
 {
-    if (not m_info)
-        return;
+    if (not m_info) return;
     mark_dirty(m_info);
     m_info.destroy();
     m_dirty = true;
 }
 
-void NCursesUI::mark_dirty(const Window& win)
+void NCursesUI::mark_dirty(const Window &win)
 {
     wredrawln(m_window, (int)win.pos.line, (int)win.size.line);
 }
 
-CharCoord NCursesUI::dimensions()
-{
-    return m_dimensions;
-}
-
+CharCoord NCursesUI::dimensions() { return m_dimensions; }
 void NCursesUI::set_input_callback(InputCallback callback)
 {
     m_input_callback = std::move(callback);
 }
 
-void NCursesUI::abort()
-{
-    endwin();
-}
-
+void NCursesUI::abort() { endwin(); }
 void NCursesUI::enable_mouse(bool enabled)
 {
-    if (enabled == m_mouse_enabled)
-        return;
+    if (enabled == m_mouse_enabled) return;
 
     m_mouse_enabled = enabled;
     if (enabled)
@@ -953,7 +955,7 @@ void NCursesUI::enable_mouse(bool enabled)
     fflush(stdout);
 }
 
-void NCursesUI::set_ui_options(const Options& options)
+void NCursesUI::set_ui_options(const Options &options)
 {
     {
         auto it = options.find("ncurses_assistant");
@@ -967,14 +969,14 @@ void NCursesUI::set_ui_options(const Options& options)
 
     {
         auto it = options.find("ncurses_status_on_top");
-        m_status_on_top = it != options.end() and
-            (it->value == "yes" or it->value == "true");
+        m_status_on_top =
+            it != options.end() and (it->value == "yes" or it->value == "true");
     }
 
     {
         auto it = options.find("ncurses_set_title");
-        m_set_title = it == options.end() or
-            (it->value == "yes" or it->value == "true");
+        m_set_title =
+            it == options.end() or (it->value == "yes" or it->value == "true");
     }
 
     {
@@ -984,13 +986,15 @@ void NCursesUI::set_ui_options(const Options& options)
                      enable_mouse_it->value == "true");
 
         auto wheel_up_it = options.find("ncurses_wheel_up_button");
-        m_wheel_up_button = wheel_up_it != options.end() ?
-            str_to_int_ifp(wheel_up_it->value).value_or(4) : 4;
+        m_wheel_up_button = wheel_up_it != options.end()
+                                ? str_to_int_ifp(wheel_up_it->value).value_or(4)
+                                : 4;
 
         auto wheel_down_it = options.find("ncurses_wheel_down_button");
-        m_wheel_down_button = wheel_down_it != options.end() ?
-            str_to_int_ifp(wheel_down_it->value).value_or(5) : 5;
+        m_wheel_down_button =
+            wheel_down_it != options.end()
+                ? str_to_int_ifp(wheel_down_it->value).value_or(5)
+                : 5;
     }
 }
-
 }

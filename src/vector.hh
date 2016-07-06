@@ -7,10 +7,8 @@
 
 namespace Kakoune
 {
-
-template<typename T, MemoryDomain domain = TypeDomain<T>::domain()>
+template <typename T, MemoryDomain domain = TypeDomain<T>::domain()>
 using Vector = std::vector<T, Allocator<T, domain>>;
-
 }
 
-#endif // vector_hh_INCLUDED
+#endif  // vector_hh_INCLUDED

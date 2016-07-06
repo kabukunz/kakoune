@@ -5,7 +5,6 @@
 
 namespace Kakoune
 {
-
 using UsedLetters = uint64_t;
 UsedLetters used_letters(StringView str);
 
@@ -22,14 +21,16 @@ struct RankedMatch
     RankedMatch(StringView candidate, UsedLetters candidate_letters,
                 StringView query, UsedLetters query_letters);
 
-    const StringView& candidate() const { return m_candidate; }
-    bool operator<(const RankedMatch& other) const;
-    bool operator==(const RankedMatch& other) const { return m_candidate == other.m_candidate; }
+    const StringView &candidate() const { return m_candidate; }
+    bool operator<(const RankedMatch &other) const;
+    bool operator==(const RankedMatch &other) const
+    {
+        return m_candidate == other.m_candidate;
+    }
 
     explicit operator bool() const { return not m_candidate.empty(); }
-
-private:
-    template<typename TestFunc>
+   private:
+    template <typename TestFunc>
     RankedMatch(StringView candidate, StringView query, TestFunc test);
 
     StringView m_candidate;
@@ -39,7 +40,6 @@ private:
     int m_match_index_sum = 0;
     bool m_only_word_boundary = false;
 };
-
 }
 
-#endif // ranked_match_hh_INCLUDED
+#endif  // ranked_match_hh_INCLUDED

@@ -1,12 +1,12 @@
 #include "window.hh"
 
 #include "assert.hh"
+#include "buffer_utils.hh"
+#include "client.hh"
 #include "context.hh"
 #include "highlighter.hh"
 #include "hook_manager.hh"
 #include "input_handler.hh"
-#include "client.hh"
-#include "buffer_utils.hh"
 
 #include <algorithm>
 #include <chrono>
@@ -14,26 +14,28 @@
 
 namespace Kakoune
 {
-
 // Implementation in highlighters.cc
-void highlight_selections(const Context& context, HighlightFlags flags, DisplayBuffer& display_buffer, BufferRange range);
-void expand_tabulations(const Context& context, HighlightFlags flags, DisplayBuffer& display_buffer, BufferRange range);
-void expand_unprintable(const Context& context, HighlightFlags flags, DisplayBuffer& display_buffer, BufferRange range);
+void highlight_selections(const Context &context, HighlightFlags flags,
+                          DisplayBuffer &display_buffer, BufferRange range);
+void expand_tabulations(const Context &context, HighlightFlags flags,
+                        DisplayBuffer &display_buffer, BufferRange range);
+void expand_unprintable(const Context &context, HighlightFlags flags,
+                        DisplayBuffer &display_buffer, BufferRange range);
 
-Window::Window(Buffer& buffer)
-    : Scope(buffer),
-      m_buffer(&buffer)
+Window::Window(Buffer &buffer) : Scope(buffer), m_buffer(&buffer)
 {
     run_hook_in_own_context("WinCreate", buffer.name());
 
     options().register_watcher(*this);
 
-    m_builtin_highlighters.add_child({"tabulations"_str, make_simple_highlighter(expand_tabulations)});
-    m_builtin_highlighters.add_child({"unprintable"_str, make_simple_highlighter(expand_unprintable)});
-    m_builtin_highlighters.add_child({"selections"_str,  make_simple_highlighter(highlight_selections)});
+    m_builtin_highlighters.add_child(
+        {"tabulations"_str, make_simple_highlighter(expand_tabulations)});
+    m_builtin_highlighters.add_child(
+        {"unprintable"_str, make_simple_highlighter(expand_unprintable)});
+    m_builtin_highlighters.add_child(
+        {"selections"_str, make_simple_highlighter(highlight_selections)});
 
-    for (auto& option : options().flatten_options())
-        on_option_changed(*option);
+    for (auto &option : options().flatten_options()) on_option_changed(*option);
 }
 
 Window::~Window()
@@ -55,7 +57,7 @@ void Window::display_line_at(LineCount buffer_line, LineCount display_line)
 
 void Window::center_line(LineCount buffer_line)
 {
-    display_line_at(buffer_line, m_dimensions.line/2_line);
+    display_line_at(buffer_line, m_dimensions.line / 2_line);
 }
 
 void Window::scroll(CharCount offset)
@@ -63,7 +65,8 @@ void Window::scroll(CharCount offset)
     m_position.column = std::max(0_char, m_position.column + offset);
 }
 
-void Window::display_column_at(CharCount buffer_column, CharCount display_column)
+void Window::display_column_at(CharCount buffer_column,
+                               CharCount display_column)
 {
     if (display_column >= 0 or display_column < m_dimensions.column)
         m_position.column = std::max(0_char, buffer_column - display_column);
@@ -71,24 +74,22 @@ void Window::display_column_at(CharCount buffer_column, CharCount display_column
 
 void Window::center_column(CharCount buffer_column)
 {
-    display_column_at(buffer_column, m_dimensions.column/2_char);
+    display_column_at(buffer_column, m_dimensions.column / 2_char);
 }
 
-Window::Setup Window::build_setup(const Context& context) const
+Window::Setup Window::build_setup(const Context &context) const
 {
     Vector<BufferRange> selections;
-    for (auto& sel : context.selections())
+    for (auto &sel : context.selections())
         selections.push_back({sel.cursor(), sel.anchor()});
 
-    return { m_position, m_dimensions,
-             context.buffer().timestamp(),
-             context.selections().main_index(),
-             std::move(selections) };
+    return {m_position, m_dimensions, context.buffer().timestamp(),
+            context.selections().main_index(), std::move(selections)};
 }
 
-bool Window::needs_redraw(const Context& context) const
+bool Window::needs_redraw(const Context &context) const
 {
-    auto& selections = context.selections();
+    auto &selections = context.selections();
 
     if (m_position != m_last_setup.position or
         m_dimensions != m_last_setup.dimensions or
@@ -107,20 +108,20 @@ bool Window::needs_redraw(const Context& context) const
     return false;
 }
 
-const DisplayBuffer& Window::update_display_buffer(const Context& context)
+const DisplayBuffer &Window::update_display_buffer(const Context &context)
 {
     using namespace std::chrono;
 
-    const bool profile = context.options()["debug"].get<DebugFlags>() &
-                        DebugFlags::Profile;
+    const bool profile =
+        context.options()["debug"].get<DebugFlags>() & DebugFlags::Profile;
 
-    auto start_time = profile ? steady_clock::now() : steady_clock::time_point{};
+    auto start_time =
+        profile ? steady_clock::now() : steady_clock::time_point{};
 
-    DisplayBuffer::LineList& lines = m_display_buffer.lines();
+    DisplayBuffer::LineList &lines = m_display_buffer.lines();
     lines.clear();
 
-    if (m_dimensions == CharCoord{0,0})
-        return m_display_buffer;
+    if (m_dimensions == CharCoord{0, 0}) return m_display_buffer;
 
     kak_assert(&buffer() == &context.buffer());
     scroll_to_keep_selection_visible_ifn(context);
@@ -128,28 +129,31 @@ const DisplayBuffer& Window::update_display_buffer(const Context& context)
     for (LineCount line = 0; line < m_dimensions.line; ++line)
     {
         LineCount buffer_line = m_position.line + line;
-        if (buffer_line >= buffer().line_count())
-            break;
-        lines.emplace_back(AtomList{ {buffer(), buffer_line, buffer_line+1} });
+        if (buffer_line >= buffer().line_count()) break;
+        lines.emplace_back(AtomList{{buffer(), buffer_line, buffer_line + 1}});
     }
 
     m_display_buffer.compute_range();
-    BufferRange range{{0,0}, buffer().end_coord()};
-    m_highlighters.highlight(context, HighlightFlags::Highlight, m_display_buffer, range);
-    m_builtin_highlighters.highlight(context, HighlightFlags::Highlight, m_display_buffer, range);
+    BufferRange range{{0, 0}, buffer().end_coord()};
+    m_highlighters.highlight(context, HighlightFlags::Highlight,
+                             m_display_buffer, range);
+    m_builtin_highlighters.highlight(context, HighlightFlags::Highlight,
+                                     m_display_buffer, range);
 
     // cut the start of the line before m_position.column
-    for (auto& line : lines)
+    for (auto &line : lines)
         line.trim(m_position.column, m_dimensions.column, true);
     m_display_buffer.optimize();
 
     m_last_setup = build_setup(context);
 
-    if (profile and not (buffer().flags() & Buffer::Flags::Debug))
+    if (profile and not(buffer().flags() & Buffer::Flags::Debug))
     {
-        auto duration = duration_cast<milliseconds>(steady_clock::now() - start_time);
-        write_to_debug_buffer(format("window display update for '{}' took {} ms",
-                                     buffer().display_name(), (size_t)duration.count()));
+        auto duration =
+            duration_cast<milliseconds>(steady_clock::now() - start_time);
+        write_to_debug_buffer(
+            format("window display update for '{}' took {} ms",
+                   buffer().display_name(), (size_t)duration.count()));
     }
 
     return m_display_buffer;
@@ -166,8 +170,8 @@ void Window::set_dimensions(CharCoord dimensions)
     if (m_dimensions != dimensions)
     {
         m_dimensions = dimensions;
-        run_hook_in_own_context("WinResize", format("{}.{}", dimensions.line,
-                                                    dimensions.column));
+        run_hook_in_own_context(
+            "WinResize", format("{}.{}", dimensions.line, dimensions.column));
     }
 }
 
@@ -183,15 +187,16 @@ static LineCount adapt_view_pos(LineCount line, LineCount offset,
     return view_pos;
 }
 
-static CharCount adapt_view_pos(const DisplayBuffer& display_buffer, CharCount offset,
-                                ByteCoord pos, CharCount view_pos, CharCount view_size)
+static CharCount adapt_view_pos(const DisplayBuffer &display_buffer,
+                                CharCount offset, ByteCoord pos,
+                                CharCount view_pos, CharCount view_size)
 {
     offset = std::min(offset, (view_size + 1) / 2);
     CharCount buffer_column = 0;
     CharCount non_buffer_column = 0;
-    for (auto& line : display_buffer.lines())
+    for (auto &line : display_buffer.lines())
     {
-        for (auto& atom : line)
+        for (auto &atom : line)
         {
             if (atom.has_buffer_range())
             {
@@ -200,11 +205,11 @@ static CharCount adapt_view_pos(const DisplayBuffer& display_buffer, CharCount o
                     CharCount pos_beg, pos_end;
                     if (atom.type() == DisplayAtom::BufferRange)
                     {
-                        auto& buf = atom.buffer();
-                        pos_beg = buffer_column
-                                + utf8::distance(buf.iterator_at(atom.begin()),
+                        auto &buf = atom.buffer();
+                        pos_beg = buffer_column +
+                                  utf8::distance(buf.iterator_at(atom.begin()),
                                                  buf.iterator_at(pos));
-                        pos_end = pos_beg+1;
+                        pos_end = pos_beg + 1;
                     }
                     else
                     {
@@ -215,7 +220,8 @@ static CharCount adapt_view_pos(const DisplayBuffer& display_buffer, CharCount o
                     if (pos_beg - offset < view_pos)
                         return std::max(0_char, pos_beg - offset);
 
-                    if (pos_end + offset >= view_pos + view_size - non_buffer_column)
+                    if (pos_end + offset >=
+                        view_pos + view_size - non_buffer_column)
                         return pos_end + offset - view_size + non_buffer_column;
                 }
                 buffer_column += atom.length();
@@ -227,51 +233,55 @@ static CharCount adapt_view_pos(const DisplayBuffer& display_buffer, CharCount o
     return view_pos;
 }
 
-void Window::scroll_to_keep_selection_visible_ifn(const Context& context)
+void Window::scroll_to_keep_selection_visible_ifn(const Context &context)
 {
-    auto& selection = context.selections().main();
-    const auto& anchor = selection.anchor();
-    const auto& cursor  = selection.cursor();
+    auto &selection = context.selections().main();
+    const auto &anchor = selection.anchor();
+    const auto &cursor = selection.cursor();
 
     const CharCoord offset = options()["scrolloff"].get<CharCoord>();
 
-    // scroll lines if needed, try to get as much of the selection visible as possible
+    // scroll lines if needed, try to get as much of the selection visible as
+    // possible
     m_position.line = adapt_view_pos(anchor.line, offset.line, m_position.line,
                                      m_dimensions.line, buffer().line_count());
-    m_position.line = adapt_view_pos(cursor.line,  offset.line, m_position.line,
+    m_position.line = adapt_view_pos(cursor.line, offset.line, m_position.line,
                                      m_dimensions.line, buffer().line_count());
 
     // highlight only the line containing the cursor
     DisplayBuffer display_buffer;
-    DisplayBuffer::LineList& lines = display_buffer.lines();
-    lines.emplace_back(AtomList{ {buffer(), cursor.line, cursor.line+1} });
+    DisplayBuffer::LineList &lines = display_buffer.lines();
+    lines.emplace_back(AtomList{{buffer(), cursor.line, cursor.line + 1}});
 
     display_buffer.compute_range();
     BufferRange range{cursor.line, cursor.line + 1};
-    m_highlighters.highlight(context, HighlightFlags::MoveOnly, display_buffer, range);
-    m_builtin_highlighters.highlight(context, HighlightFlags::MoveOnly, display_buffer, range);
+    m_highlighters.highlight(context, HighlightFlags::MoveOnly, display_buffer,
+                             range);
+    m_builtin_highlighters.highlight(context, HighlightFlags::MoveOnly,
+                                     display_buffer, range);
 
     // now we can compute where the cursor is in display columns
     // (this is only valid if highlighting one line and multiple lines put
     // the cursor in the same position, however I do not find any sane example
     // of highlighters not doing that)
-    m_position.column = adapt_view_pos(display_buffer, offset.column,
-                                       anchor.line == cursor.line ? anchor : cursor.line,
-                                       m_position.column, m_dimensions.column);
+    m_position.column =
+        adapt_view_pos(display_buffer, offset.column,
+                       anchor.line == cursor.line ? anchor : cursor.line,
+                       m_position.column, m_dimensions.column);
     m_position.column = adapt_view_pos(display_buffer, offset.column, cursor,
                                        m_position.column, m_dimensions.column);
 }
 
 namespace
 {
-CharCount find_display_column(const DisplayLine& line, const Buffer& buffer,
+CharCount find_display_column(const DisplayLine &line, const Buffer &buffer,
                               ByteCoord coord)
 {
     CharCount column = 0;
-    for (auto& atom : line)
+    for (auto &atom : line)
     {
-        if (atom.has_buffer_range() and
-            coord >= atom.begin() and coord < atom.end())
+        if (atom.has_buffer_range() and coord >= atom.begin() and
+            coord < atom.end())
         {
             if (atom.type() == DisplayAtom::BufferRange)
                 column += utf8::distance(buffer.iterator_at(atom.begin()),
@@ -283,11 +293,11 @@ CharCount find_display_column(const DisplayLine& line, const Buffer& buffer,
     return column;
 }
 
-ByteCoord find_buffer_coord(const DisplayLine& line, const Buffer& buffer,
+ByteCoord find_buffer_coord(const DisplayLine &line, const Buffer &buffer,
                             CharCount column)
 {
-    auto& range = line.range();
-    for (auto& atom : line)
+    auto &range = line.range();
+    for (auto &atom : line)
     {
         CharCount len = atom.length();
         if (atom.has_buffer_range() and column < len)
@@ -296,8 +306,9 @@ ByteCoord find_buffer_coord(const DisplayLine& line, const Buffer& buffer,
                 return buffer.clamp(
                     utf8::advance(buffer.iterator_at(atom.begin()),
                                   buffer.iterator_at(range.end),
-                                  std::max(0_char, column)).coord());
-             return buffer.clamp(atom.begin());
+                                  std::max(0_char, column))
+                        .coord());
+            return buffer.clamp(atom.begin());
         }
         column -= len;
     }
@@ -308,24 +319,22 @@ ByteCoord find_buffer_coord(const DisplayLine& line, const Buffer& buffer,
 CharCoord Window::display_position(ByteCoord coord) const
 {
     LineCount l = 0;
-    for (auto& line : m_display_buffer.lines())
+    for (auto &line : m_display_buffer.lines())
     {
-        auto& range = line.range();
+        auto &range = line.range();
         if (range.begin <= coord and coord < range.end)
             return {l, find_display_column(line, buffer(), coord)};
         ++l;
     }
-    return { 0, 0 };
+    return {0, 0};
 }
 
 ByteCoord Window::buffer_coord(CharCoord coord) const
 {
-    if (m_display_buffer.lines().empty())
-        return {0,0};
-    if (coord <= 0_line)
-        coord = {0,0};
+    if (m_display_buffer.lines().empty()) return {0, 0};
+    if (coord <= 0_line) coord = {0, 0};
     if ((int)coord.line >= m_display_buffer.lines().size())
-        coord = CharCoord{(int)m_display_buffer.lines().size()-1, INT_MAX};
+        coord = CharCoord{(int)m_display_buffer.lines().size() - 1, INT_MAX};
 
     return find_buffer_coord(m_display_buffer.lines()[(int)coord.line],
                              buffer(), coord.column);
@@ -336,46 +345,49 @@ ByteCoord Window::offset_coord(ByteCoord coord, CharCount offset)
     return buffer().offset_coord(coord, offset);
 }
 
-ByteCoordAndTarget Window::offset_coord(ByteCoordAndTarget coord, LineCount offset)
+ByteCoordAndTarget Window::offset_coord(ByteCoordAndTarget coord,
+                                        LineCount offset)
 {
-    auto line = clamp(coord.line + offset, 0_line, buffer().line_count()-1);
+    auto line = clamp(coord.line + offset, 0_line, buffer().line_count() - 1);
     DisplayBuffer display_buffer;
-    DisplayBuffer::LineList& lines = display_buffer.lines();
-    lines.emplace_back(AtomList{ {buffer(), coord.line, coord.line+1} });
-    lines.emplace_back(AtomList{ {buffer(), line, line+1} });
+    DisplayBuffer::LineList &lines = display_buffer.lines();
+    lines.emplace_back(AtomList{{buffer(), coord.line, coord.line + 1}});
+    lines.emplace_back(AtomList{{buffer(), line, line + 1}});
     display_buffer.compute_range();
 
-    BufferRange range{ std::min(line, coord.line), std::max(line,coord.line)+1};
+    BufferRange range{std::min(line, coord.line),
+                      std::max(line, coord.line) + 1};
 
-    InputHandler input_handler{{ *m_buffer, Selection{} }, Context::Flags::Transient};
+    InputHandler input_handler{{*m_buffer, Selection{}},
+                               Context::Flags::Transient};
     input_handler.context().set_window(*this);
-    m_highlighters.highlight(input_handler.context(), HighlightFlags::MoveOnly, display_buffer, range);
-    m_builtin_highlighters.highlight(input_handler.context(), HighlightFlags::MoveOnly, display_buffer, range);
+    m_highlighters.highlight(input_handler.context(), HighlightFlags::MoveOnly,
+                             display_buffer, range);
+    m_builtin_highlighters.highlight(input_handler.context(),
+                                     HighlightFlags::MoveOnly, display_buffer,
+                                     range);
 
-    CharCount column = coord.target == -1 ? find_display_column(lines[0], buffer(), coord) : coord.target;
-    return { find_buffer_coord(lines[1], buffer(), column), column };
+    CharCount column = coord.target == -1
+                           ? find_display_column(lines[0], buffer(), coord)
+                           : coord.target;
+    return {find_buffer_coord(lines[1], buffer(), column), column};
 }
 
-void Window::clear_display_buffer()
+void Window::clear_display_buffer() { m_display_buffer = DisplayBuffer{}; }
+void Window::on_option_changed(const Option &option)
 {
-    m_display_buffer = DisplayBuffer{};
-}
-
-void Window::on_option_changed(const Option& option)
-{
-    run_hook_in_own_context("WinSetOption", format("{}={}", option.name(),
-                                                   option.get_as_string()));
+    run_hook_in_own_context(
+        "WinSetOption", format("{}={}", option.name(), option.get_as_string()));
     // an highlighter might depend on the option, so we need to redraw
     force_redraw();
 }
 
-
 void Window::run_hook_in_own_context(StringView hook_name, StringView param)
 {
-    InputHandler hook_handler({ *m_buffer, Selection{} }, Context::Flags::Transient);
+    InputHandler hook_handler({*m_buffer, Selection{}},
+                              Context::Flags::Transient);
     hook_handler.context().set_window(*this);
-    if (m_client)
-        hook_handler.context().set_client(*m_client);
+    if (m_client) hook_handler.context().set_client(*m_client);
 
     hooks().run_hook(hook_name, param, hook_handler.context());
 }

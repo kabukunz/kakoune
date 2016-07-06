@@ -3,17 +3,15 @@
 
 namespace Kakoune
 {
-
 struct UnitTest
 {
     UnitTest(void (*func)()) : func(func), next(list) { list = this; }
     void (*func)();
-    const UnitTest* next;
+    const UnitTest *next;
 
     static void run_all_tests();
-    static UnitTest* list;
+    static UnitTest *list;
 };
-
 }
 
-#endif // unit_tests_hh_INCLUDED
+#endif  // unit_tests_hh_INCLUDED

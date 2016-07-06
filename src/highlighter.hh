@@ -1,12 +1,12 @@
 #ifndef highlighter_hh_INCLUDED
 #define highlighter_hh_INCLUDED
 
-#include "coord.hh"
+#include "array_view.hh"
 #include "completion.hh"
+#include "coord.hh"
 #include "display_buffer.hh"
 #include "exception.hh"
 #include "id_map.hh"
-#include "array_view.hh"
 #include "string.hh"
 #include "utils.hh"
 
@@ -14,7 +14,6 @@
 
 namespace Kakoune
 {
-
 class Context;
 
 enum class HighlightFlags
@@ -35,35 +34,53 @@ using HighlighterAndId = std::pair<String, std::unique_ptr<Highlighter>>;
 struct Highlighter
 {
     virtual ~Highlighter() {}
-    virtual void highlight(const Context& context, HighlightFlags flags, DisplayBuffer& display_buffer, BufferRange range) = 0;
+    virtual void highlight(const Context &context, HighlightFlags flags,
+                           DisplayBuffer &display_buffer,
+                           BufferRange range) = 0;
 
     virtual bool has_children() const { return false; }
-    virtual Highlighter& get_child(StringView path) { throw runtime_error("this highlighter do not hold children"); }
-    virtual void add_child(HighlighterAndId&& hl) { throw runtime_error("this highlighter do not hold children"); }
-    virtual void remove_child(StringView id) { throw runtime_error("this highlighter do not hold children"); }
-    virtual Completions complete_child(StringView path, ByteCount cursor_pos, bool group) const { throw runtime_error("this highlighter do not hold children"); }
+    virtual Highlighter &get_child(StringView path)
+    {
+        throw runtime_error("this highlighter do not hold children");
+    }
+    virtual void add_child(HighlighterAndId &&hl)
+    {
+        throw runtime_error("this highlighter do not hold children");
+    }
+    virtual void remove_child(StringView id)
+    {
+        throw runtime_error("this highlighter do not hold children");
+    }
+    virtual Completions complete_child(StringView path, ByteCount cursor_pos,
+                                       bool group) const
+    {
+        throw runtime_error("this highlighter do not hold children");
+    }
 };
 
-template<typename Func>
-struct SimpleHighlighter : public Highlighter
+template <typename Func> struct SimpleHighlighter : public Highlighter
 {
     SimpleHighlighter(Func func) : m_func(std::move(func)) {}
-    virtual void highlight(const Context& context, HighlightFlags flags, DisplayBuffer& display_buffer, BufferRange range) override
+    virtual void highlight(const Context &context, HighlightFlags flags,
+                           DisplayBuffer &display_buffer,
+                           BufferRange range) override
     {
         m_func(context, flags, display_buffer, range);
     }
-private:
+
+   private:
     Func m_func;
 };
 
-template<typename T>
+template <typename T>
 std::unique_ptr<SimpleHighlighter<T>> make_simple_highlighter(T func)
 {
     return make_unique<SimpleHighlighter<T>>(std::move(func));
 }
 
 using HighlighterParameters = ConstArrayView<String>;
-using HighlighterFactory = std::function<HighlighterAndId (HighlighterParameters params)>;
+using HighlighterFactory =
+    std::function<HighlighterAndId(HighlighterParameters params)>;
 
 struct HighlighterFactoryAndDocstring
 {
@@ -73,8 +90,8 @@ struct HighlighterFactoryAndDocstring
 
 struct HighlighterRegistry : IdMap<HighlighterFactoryAndDocstring>,
                              Singleton<HighlighterRegistry>
-{};
-
+{
+};
 }
 
-#endif // highlighter_hh_INCLUDED
+#endif  // highlighter_hh_INCLUDED

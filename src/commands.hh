@@ -3,11 +3,11 @@
 
 namespace Kakoune
 {
-
 void register_commands();
 
-struct kill_session {};
-
+struct kill_session
+{
+};
 }
 
-#endif // commands_hh_INCLUDED
+#endif  // commands_hh_INCLUDED

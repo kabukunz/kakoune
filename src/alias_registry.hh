@@ -1,17 +1,16 @@
 #ifndef alias_registry_hh_INCLUDED
 #define alias_registry_hh_INCLUDED
 
+#include "id_map.hh"
 #include "safe_ptr.hh"
 #include "string.hh"
-#include "id_map.hh"
 
 namespace Kakoune
 {
-
 class AliasRegistry : public SafeCountable
 {
-public:
-    AliasRegistry(AliasRegistry& parent) : m_parent(&parent) {}
+   public:
+    AliasRegistry(AliasRegistry &parent) : m_parent(&parent) {}
     void add_alias(String alias, String command);
     void remove_alias(StringView alias);
     StringView operator[](StringView name) const;
@@ -23,14 +22,12 @@ public:
     using AliasDesc = std::pair<StringView, StringView>;
     Vector<AliasDesc> flatten_aliases() const;
 
-private:
+   private:
     friend class Scope;
     AliasRegistry() {}
-
     SafePtr<AliasRegistry> m_parent;
     AliasMap m_aliases;
 };
-
 }
 
-#endif // alias_registry_hh_INCLUDED
+#endif  // alias_registry_hh_INCLUDED

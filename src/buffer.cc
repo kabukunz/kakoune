@@ -16,7 +16,6 @@
 
 namespace Kakoune
 {
-
 struct ParsedLines
 {
     BufferLines lines;
@@ -27,7 +26,7 @@ struct ParsedLines
 static ParsedLines parse_lines(StringView data)
 {
     ParsedLines res;
-    const char* pos = data.begin();
+    const char *pos = data.begin();
     if (data.substr(0, 3_byte) == "\xEF\xBB\xBF")
     {
         res.bom = ByteOrderMark::Utf8;
@@ -38,34 +37,37 @@ static ParsedLines parse_lines(StringView data)
     for (auto it = pos; it != data.end(); ++it)
     {
         if (*it == '\n')
-            ((it != pos and *(it-1) == '\r') ? has_crlf : has_lf) = true;
+            ((it != pos and *(it - 1) == '\r') ? has_crlf : has_lf) = true;
     }
     const bool crlf = has_crlf and not has_lf;
     res.eolformat = crlf ? EolFormat::Crlf : EolFormat::Lf;
 
     while (pos < data.end())
     {
-        const char* eol = std::find(pos, data.end(), '\n');
-        res.lines.emplace_back(StringData::create({pos, eol - (crlf and eol != data.end() ? 1 : 0)}, '\n'));
+        const char *eol = std::find(pos, data.end(), '\n');
+        res.lines.emplace_back(StringData::create(
+            {pos, eol - (crlf and eol != data.end() ? 1 : 0)}, '\n'));
         pos = eol + 1;
     }
 
     return res;
 }
 
-static void apply_options(OptionManager& options, const ParsedLines& parsed_lines)
+static void apply_options(OptionManager &options,
+                          const ParsedLines &parsed_lines)
 {
     options.get_local_option("eolformat").set(parsed_lines.eolformat);
     options.get_local_option("BOM").set(parsed_lines.bom);
 }
 
-Buffer::Buffer(String name, Flags flags, StringView data,
-               timespec fs_timestamp)
+Buffer::Buffer(String name, Flags flags, StringView data, timespec fs_timestamp)
     : Scope(GlobalScope::instance()),
-      m_name((flags & Flags::File) ? real_path(parse_filename(name)) : std::move(name)),
+      m_name((flags & Flags::File) ? real_path(parse_filename(name))
+                                   : std::move(name)),
       m_display_name((flags & Flags::File) ? compact_path(m_name) : m_name),
       m_flags(flags | Flags::NoUndo),
-      m_history(), m_history_cursor(m_history.begin()),
+      m_history(),
+      m_history_cursor(m_history.begin()),
       m_last_save_undo_index(0),
       m_fs_timestamp(fs_timestamp)
 {
@@ -76,14 +78,14 @@ Buffer::Buffer(String name, Flags flags, StringView data,
     if (parsed_lines.lines.empty())
         parsed_lines.lines.emplace_back(StringData::create("\n"));
 
-    #ifdef KAK_DEBUG
-    for (auto& line : parsed_lines.lines)
-        kak_assert(not (line->length == 0) and
-                   line->data()[line->length-1] == '\n');
-    #endif
-    static_cast<BufferLines&>(m_lines) = std::move(parsed_lines.lines);
+#ifdef KAK_DEBUG
+    for (auto &line : parsed_lines.lines)
+        kak_assert(not(line->length == 0) and
+                   line->data()[line->length - 1] == '\n');
+#endif
+    static_cast<BufferLines &>(m_lines) = std::move(parsed_lines.lines);
 
-    m_changes.push_back({ Change::Insert, true, {0,0}, line_count() });
+    m_changes.push_back({Change::Insert, true, {0, 0}, line_count()});
 
     apply_options(options(), parsed_lines);
 
@@ -101,11 +103,9 @@ Buffer::Buffer(String name, Flags flags, StringView data,
     run_hook_in_own_context("BufCreate", m_name);
 
     // now we may begin to record undo data
-    if (not (flags & Flags::NoUndo))
-        m_flags &= ~Flags::NoUndo;
+    if (not(flags & Flags::NoUndo)) m_flags &= ~Flags::NoUndo;
 
-    for (auto& option : options().flatten_options())
-        on_option_changed(*option);
+    for (auto &option : options().flatten_options()) on_option_changed(*option);
 }
 
 Buffer::~Buffer()
@@ -118,7 +118,7 @@ Buffer::~Buffer()
 
 bool Buffer::set_name(String name)
 {
-    Buffer* other = BufferManager::instance().get_buffer_ifp(name);
+    Buffer *other = BufferManager::instance().get_buffer_ifp(name);
     if (other == nullptr or other == this)
     {
         if (m_flags & Flags::File)
@@ -138,8 +138,7 @@ bool Buffer::set_name(String name)
 
 void Buffer::update_display_name()
 {
-    if (m_flags & Flags::File)
-        m_display_name = compact_path(m_name);
+    if (m_flags & Flags::File) m_display_name = compact_path(m_name);
 }
 
 BufferIterator Buffer::iterator_at(ByteCoord coord) const
@@ -158,32 +157,36 @@ ByteCoord Buffer::clamp(ByteCoord coord) const
 ByteCoord Buffer::offset_coord(ByteCoord coord, CharCount offset)
 {
     StringView line = m_lines[coord.line];
-    auto character = std::max(0_char, std::min(line.char_count_to(coord.column) + offset,
-                                               line.char_length() - 1));
+    auto character =
+        std::max(0_char, std::min(line.char_count_to(coord.column) + offset,
+                                  line.char_length() - 1));
     return {coord.line, line.byte_count_to(character)};
 }
 
-ByteCoordAndTarget Buffer::offset_coord(ByteCoordAndTarget coord, LineCount offset)
+ByteCoordAndTarget Buffer::offset_coord(ByteCoordAndTarget coord,
+                                        LineCount offset)
 {
-    auto character = coord.target == -1 ? m_lines[coord.line].char_count_to(coord.column) : coord.target;
-    auto line = Kakoune::clamp(coord.line + offset, 0_line, line_count()-1);
+    auto character = coord.target == -1
+                         ? m_lines[coord.line].char_count_to(coord.column)
+                         : coord.target;
+    auto line = Kakoune::clamp(coord.line + offset, 0_line, line_count() - 1);
     StringView content = m_lines[line];
 
-    character = std::max(0_char, std::min(character, content.char_length() - 2));
+    character =
+        std::max(0_char, std::min(character, content.char_length() - 2));
     return {line, content.byte_count_to(character), character};
 }
 
 String Buffer::string(ByteCoord begin, ByteCoord end) const
 {
     String res;
-    for (auto line = begin.line; line <= end.line and line < line_count(); ++line)
+    for (auto line = begin.line; line <= end.line and line < line_count();
+         ++line)
     {
         ByteCount start = 0;
-        if (line == begin.line)
-            start = begin.column;
+        if (line == begin.line) start = begin.column;
         ByteCount count = -1;
-        if (line == end.line)
-            count = end.column - start;
+        if (line == end.line) count = end.column - start;
         res += m_lines[line].substr(start, count);
     }
     return res;
@@ -192,14 +195,20 @@ String Buffer::string(ByteCoord begin, ByteCoord end) const
 // A Modification holds a single atomic modification to Buffer
 struct Buffer::Modification
 {
-    enum Type { Insert, Erase };
+    enum Type
+    {
+        Insert,
+        Erase
+    };
 
-    Type      type;
+    Type type;
     ByteCoord coord;
     StringDataPtr content;
 
     Modification(Type type, ByteCoord coord, StringDataPtr content)
-        : type(type), coord(coord), content(std::move(content)) {}
+        : type(type), coord(coord), content(std::move(content))
+    {
+    }
 
     Modification inverse() const
     {
@@ -214,27 +223,30 @@ void Buffer::reload(StringView data, timespec fs_timestamp)
     if (parsed_lines.lines.empty())
         parsed_lines.lines.emplace_back(StringData::create("\n"));
 
-    const bool record_undo = not (m_flags & Flags::NoUndo);
+    const bool record_undo = not(m_flags & Flags::NoUndo);
 
     commit_undo_group();
 
     if (not record_undo)
     {
-        m_changes.push_back({ Change::Erase, true, {0,0}, line_count() });
+        m_changes.push_back({Change::Erase, true, {0, 0}, line_count()});
 
-        static_cast<BufferLines&>(m_lines) = std::move(parsed_lines.lines);
+        static_cast<BufferLines &>(m_lines) = std::move(parsed_lines.lines);
 
-        m_changes.push_back({ Change::Insert, true, {0,0}, line_count() });
+        m_changes.push_back({Change::Insert, true, {0, 0}, line_count()});
     }
     else
     {
-        auto diff = find_diff(m_lines.begin(), m_lines.size(),
-                              parsed_lines.lines.begin(), (int)parsed_lines.lines.size(),
-                              [](const StringDataPtr& lhs, const StringDataPtr& rhs)
-                              { return lhs->hash == rhs->hash and lhs->strview() == rhs->strview(); });
+        auto diff = find_diff(
+            m_lines.begin(), m_lines.size(), parsed_lines.lines.begin(),
+            (int)parsed_lines.lines.size(),
+            [](const StringDataPtr &lhs, const StringDataPtr &rhs) {
+                return lhs->hash == rhs->hash and
+                       lhs->strview() == rhs->strview();
+            });
 
         auto it = m_lines.begin();
-        for (auto& d : diff)
+        for (auto &d : diff)
         {
             if (d.mode == Diff::Keep)
                 it += d.len;
@@ -247,21 +259,24 @@ void Buffer::reload(StringView data, timespec fs_timestamp)
                         Modification::Insert, cur_line + line,
                         parsed_lines.lines[(int)(d.posB + line)]);
 
-                m_changes.push_back({ Change::Insert, it == m_lines.end(), cur_line, cur_line + d.len });
-                m_lines.insert(it, &parsed_lines.lines[d.posB], &parsed_lines.lines[d.posB + d.len]);
+                m_changes.push_back({Change::Insert, it == m_lines.end(),
+                                     cur_line, cur_line + d.len});
+                m_lines.insert(it, &parsed_lines.lines[d.posB],
+                               &parsed_lines.lines[d.posB + d.len]);
                 it = m_lines.begin() + (int)(cur_line + d.len);
             }
             else if (d.mode == Diff::Remove)
             {
                 const LineCount cur_line = (int)(it - m_lines.begin());
 
-                for (LineCount line = d.len-1; line >= 0; --line)
+                for (LineCount line = d.len - 1; line >= 0; --line)
                     m_current_undo_group.emplace_back(
                         Modification::Erase, cur_line + line,
                         m_lines.get_storage(cur_line + line));
 
                 it = m_lines.erase(it, it + d.len);
-                m_changes.push_back({ Change::Erase, it == m_lines.end(), cur_line, cur_line + d.len });
+                m_changes.push_back({Change::Erase, it == m_lines.end(),
+                                     cur_line, cur_line + d.len});
             }
         }
     }
@@ -276,11 +291,9 @@ void Buffer::reload(StringView data, timespec fs_timestamp)
 
 void Buffer::commit_undo_group()
 {
-    if (m_flags & Flags::NoUndo)
-        return;
+    if (m_flags & Flags::NoUndo) return;
 
-    if (m_current_undo_group.empty())
-        return;
+    if (m_current_undo_group.empty()) return;
 
     m_history.erase(m_history_cursor, m_history.end());
 
@@ -288,32 +301,29 @@ void Buffer::commit_undo_group()
     m_current_undo_group.clear();
     m_history_cursor = m_history.end();
 
-    if (m_history.size() < m_last_save_undo_index)
-        m_last_save_undo_index = -1;
+    if (m_history.size() < m_last_save_undo_index) m_last_save_undo_index = -1;
 }
 
 bool Buffer::undo()
 {
     commit_undo_group();
 
-    if (m_history_cursor == m_history.begin())
-        return false;
+    if (m_history_cursor == m_history.begin()) return false;
 
     --m_history_cursor;
 
-    for (const Modification& modification : *m_history_cursor | reverse())
+    for (const Modification &modification : *m_history_cursor | reverse())
         apply_modification(modification.inverse());
     return true;
 }
 
 bool Buffer::redo()
 {
-    if (m_history_cursor == m_history.end())
-        return false;
+    if (m_history_cursor == m_history.end()) return false;
 
     kak_assert(m_current_undo_group.empty());
 
-    for (const Modification& modification : *m_history_cursor)
+    for (const Modification &modification : *m_history_cursor)
         apply_modification(modification);
 
     ++m_history_cursor;
@@ -324,7 +334,7 @@ void Buffer::check_invariant() const
 {
 #ifdef KAK_DEBUG
     kak_assert(not m_lines.empty());
-    for (auto& line : m_lines)
+    for (auto &line : m_lines)
     {
         kak_assert(line->strview().length() > 0);
         kak_assert(line->strview().back() == '\n');
@@ -336,18 +346,17 @@ ByteCoord Buffer::do_insert(ByteCoord pos, StringView content)
 {
     kak_assert(is_valid(pos));
 
-    if (content.empty())
-        return pos;
+    if (content.empty()) return pos;
 
     const bool at_end = is_end(pos);
-    const bool append_lines = at_end and (m_lines.empty() or byte_at(back_coord()) == '\n');
-    if (at_end)
-        pos = append_lines ? line_count() : end_coord();
+    const bool append_lines =
+        at_end and (m_lines.empty() or byte_at(back_coord()) == '\n');
+    if (at_end) pos = append_lines ? line_count() : end_coord();
 
-    const StringView prefix = append_lines ?
-        StringView{} : m_lines[pos.line].substr(0, pos.column);
-    const StringView suffix = at_end ?
-        StringView{} : m_lines[pos.line].substr(pos.column);
+    const StringView prefix =
+        append_lines ? StringView{} : m_lines[pos.line].substr(0, pos.column);
+    const StringView suffix =
+        at_end ? StringView{} : m_lines[pos.line].substr(pos.column);
 
     LineList new_lines;
     ByteCount start = 0;
@@ -356,7 +365,8 @@ ByteCoord Buffer::do_insert(ByteCoord pos, StringView content)
         if (content[i] == '\n')
         {
             StringView line = content.substr(start, i + 1 - start);
-            new_lines.push_back(StringData::create(start == 0 ? prefix + line : line));
+            new_lines.push_back(
+                StringData::create(start == 0 ? prefix + line : line));
             start = i + 1;
         }
     }
@@ -367,17 +377,16 @@ ByteCoord Buffer::do_insert(ByteCoord pos, StringView content)
 
     auto line_it = m_lines.begin() + (int)pos.line;
     auto new_lines_it = new_lines.begin();
-    if (not append_lines)
-        *line_it++ = std::move(*new_lines_it++);
+    if (not append_lines) *line_it++ = std::move(*new_lines_it++);
 
-    m_lines.insert(line_it,
-                   std::make_move_iterator(new_lines_it),
+    m_lines.insert(line_it, std::make_move_iterator(new_lines_it),
                    std::make_move_iterator(new_lines.end()));
 
     const LineCount last_line = pos.line + new_lines.size() - 1;
-    const ByteCoord end = ByteCoord{ last_line, m_lines[last_line].length() - suffix.length() };
+    const ByteCoord end =
+        ByteCoord{last_line, m_lines[last_line].length() - suffix.length()};
 
-    m_changes.push_back({ Change::Insert, at_end, pos, end });
+    m_changes.push_back({Change::Insert, at_end, pos, end});
     return pos;
 }
 
@@ -392,21 +401,23 @@ ByteCoord Buffer::do_erase(ByteCoord begin, ByteCoord end)
     ByteCoord next;
     if (new_line.length() != 0)
     {
-        m_lines.erase(m_lines.begin() + (int)begin.line, m_lines.begin() + (int)end.line);
+        m_lines.erase(m_lines.begin() + (int)begin.line,
+                      m_lines.begin() + (int)end.line);
         m_lines.get_storage(begin.line) = StringData::create(new_line);
         next = begin;
     }
     else
     {
-        m_lines.erase(m_lines.begin() + (int)begin.line, m_lines.begin() + (int)end.line + 1);
+        m_lines.erase(m_lines.begin() + (int)begin.line,
+                      m_lines.begin() + (int)end.line + 1);
         next = is_end(begin) ? end_coord() : ByteCoord{begin.line, 0};
     }
 
-    m_changes.push_back({ Change::Erase, is_end(begin), begin, end });
+    m_changes.push_back({Change::Erase, is_end(begin), begin, end});
     return next;
 }
 
-void Buffer::apply_modification(const Modification& modification)
+void Buffer::apply_modification(const Modification &modification)
 {
     StringView content = modification.content->strview();
     ByteCoord coord = modification.coord;
@@ -414,26 +425,25 @@ void Buffer::apply_modification(const Modification& modification)
     kak_assert(is_valid(coord));
     switch (modification.type)
     {
-    case Modification::Insert:
-        do_insert(coord, content);
-        break;
-    case Modification::Erase:
-    {
-        auto end = advance(coord, content.length());
-        kak_assert(string(coord, end) == content);
-        do_erase(coord, end);
-        break;
-    }
-    default:
-        kak_assert(false);
+        case Modification::Insert:
+            do_insert(coord, content);
+            break;
+        case Modification::Erase:
+        {
+            auto end = advance(coord, content.length());
+            kak_assert(string(coord, end) == content);
+            do_erase(coord, end);
+            break;
+        }
+        default:
+            kak_assert(false);
     }
 }
 
 ByteCoord Buffer::insert(ByteCoord pos, StringView content)
 {
     kak_assert(is_valid(pos));
-    if (content.empty())
-        return pos;
+    if (content.empty()) return pos;
 
     StringDataPtr real_content;
     if (is_end(pos) and content.back() != '\n')
@@ -444,23 +454,26 @@ ByteCoord Buffer::insert(ByteCoord pos, StringView content)
     // for undo and redo purpose it is better to use one past last line rather
     // than one past last char coord.
     auto coord = is_end(pos) ? line_count() : pos;
-    if (not (m_flags & Flags::NoUndo))
-        m_current_undo_group.emplace_back(Modification::Insert, coord, real_content);
+    if (not(m_flags & Flags::NoUndo))
+        m_current_undo_group.emplace_back(Modification::Insert, coord,
+                                          real_content);
     return do_insert(pos, real_content->strview());
 }
 
 ByteCoord Buffer::erase(ByteCoord begin, ByteCoord end)
 {
     kak_assert(is_valid(begin) and is_valid(end));
-    // do not erase last \n except if we erase from the start of a line, and normalize
+    // do not erase last \n except if we erase from the start of a line, and
+    // normalize
     // end coord
     if (is_end(end))
-        end = (begin.column != 0 or begin == ByteCoord{0,0}) ? prev(end) : end_coord();
+        end = (begin.column != 0 or begin == ByteCoord{0, 0}) ? prev(end)
+                                                              : end_coord();
 
-    if (begin >= end) // use >= to handle case where begin is {line_count}
+    if (begin >= end)  // use >= to handle case where begin is {line_count}
         return begin;
 
-    if (not (m_flags & Flags::NoUndo))
+    if (not(m_flags & Flags::NoUndo))
         m_current_undo_group.emplace_back(Modification::Erase, begin,
                                           intern(string(begin, end)));
     return do_erase(begin, end);
@@ -468,7 +481,7 @@ ByteCoord Buffer::erase(ByteCoord begin, ByteCoord end)
 
 ByteCoord Buffer::replace(ByteCoord begin, ByteCoord end, StringView content)
 {
-    if (not (m_flags & Flags::NoUndo))
+    if (not(m_flags & Flags::NoUndo))
         m_current_undo_group.emplace_back(Modification::Erase, begin,
                                           intern(string(begin, end)));
     auto pos = do_erase(begin, end);
@@ -479,26 +492,25 @@ ByteCoord Buffer::replace(ByteCoord begin, ByteCoord end, StringView content)
     else
         real_content = intern(content);
 
-    bool last_char_is_eol = not (m_lines.empty() or
-                                 m_lines.back().empty() or
-                                 m_lines.back().back() != '\n');
+    bool last_char_is_eol = not(m_lines.empty() or m_lines.back().empty() or
+                                m_lines.back().back() != '\n');
     auto coord = is_end(pos) and last_char_is_eol ? line_count() : pos;
-    if (not (m_flags & Flags::NoUndo))
-        m_current_undo_group.emplace_back(Modification::Insert, coord, real_content);
+    if (not(m_flags & Flags::NoUndo))
+        m_current_undo_group.emplace_back(Modification::Insert, coord,
+                                          real_content);
     return do_insert(pos, real_content->strview());
 }
 
 bool Buffer::is_modified() const
 {
     size_t history_cursor_index = m_history_cursor - m_history.begin();
-    return m_last_save_undo_index != history_cursor_index
-           or not m_current_undo_group.empty();
+    return m_last_save_undo_index != history_cursor_index or
+           not m_current_undo_group.empty();
 }
 
 void Buffer::notify_saved()
 {
-    if (not m_current_undo_group.empty())
-        commit_undo_group();
+    if (not m_current_undo_group.empty()) commit_undo_group();
 
     m_flags &= ~Flags::New;
     size_t history_cursor_index = m_history_cursor - m_history.begin();
@@ -516,10 +528,9 @@ ByteCoord Buffer::advance(ByteCoord coord, ByteCount count) const
         while (count >= m_lines[line].length())
         {
             count -= m_lines[line++].length();
-            if (line == line_count())
-                return end_coord();
+            if (line == line_count()) return end_coord();
         }
-        return { line, count };
+        return {line, count};
     }
     else if (count < 0)
     {
@@ -528,10 +539,9 @@ ByteCoord Buffer::advance(ByteCoord coord, ByteCount count) const
         while (count < 0)
         {
             count += m_lines[--line].length();
-            if (line < 0)
-                return {0, 0};
+            if (line < 0) return {0, 0};
         }
-        return { line, count };
+        return {line, count};
     }
     return coord;
 }
@@ -563,16 +573,18 @@ ByteCoord Buffer::char_prev(ByteCoord coord) const
 {
     kak_assert(is_valid(coord));
     if (is_end(coord))
-        return coord = {(int)m_lines.size()-1, m_lines.back().length() - 1};
+        return coord = {(int)m_lines.size() - 1, m_lines.back().length() - 1};
     else if (coord.column == 0)
     {
-        if (coord.line > 0)
-            coord.column = m_lines[--coord.line].length() - 1;
+        if (coord.line > 0) coord.column = m_lines[--coord.line].length() - 1;
     }
     else
     {
         auto line = m_lines[coord.line];
-        coord.column = (int)(utf8::character_start(line.begin() + (int)coord.column - 1, line.begin()) - line.begin());
+        coord.column =
+            (int)(utf8::character_start(line.begin() + (int)coord.column - 1,
+                                        line.begin()) -
+                  line.begin());
     }
     return coord;
 }
@@ -589,33 +601,31 @@ void Buffer::set_fs_timestamp(timespec ts)
     m_fs_timestamp = ts;
 }
 
-void Buffer::on_option_changed(const Option& option)
+void Buffer::on_option_changed(const Option &option)
 {
-    run_hook_in_own_context("BufSetOption",
-                            format("{}={}", option.name(), option.get_as_string()));
+    run_hook_in_own_context(
+        "BufSetOption", format("{}={}", option.name(), option.get_as_string()));
 }
 
 void Buffer::run_hook_in_own_context(StringView hook_name, StringView param)
 {
-    InputHandler hook_handler({ *this, Selection{} }, Context::Flags::Transient);
+    InputHandler hook_handler({*this, Selection{}}, Context::Flags::Transient);
     hooks().run_hook(hook_name, param, hook_handler.context());
 }
 
 ByteCoord Buffer::last_modification_coord() const
 {
-    if (m_history.empty())
-        return {};
+    if (m_history.empty()) return {};
     return m_history.back().back().coord;
 }
 
 String Buffer::debug_description() const
 {
     size_t content_size = 0;
-    for (auto& line : m_lines)
-        content_size += (int)line->strview().length();
+    for (auto &line : m_lines) content_size += (int)line->strview().length();
 
     size_t additional_size = 0;
-    for (auto& undo_group : m_history)
+    for (auto &undo_group : m_history)
         additional_size += undo_group.size() * sizeof(Modification);
     additional_size += m_changes.size() * sizeof(Change);
 
@@ -624,12 +634,11 @@ String Buffer::debug_description() const
                   (m_flags & Flags::File) ? "File (" + name() + ") " : "",
                   (m_flags & Flags::New) ? "New " : "",
                   (m_flags & Flags::Fifo) ? "Fifo " : "",
-                  (m_flags & Flags::NoUndo) ? "NoUndo " : "",
-                  content_size, additional_size);
+                  (m_flags & Flags::NoUndo) ? "NoUndo " : "", content_size,
+                  additional_size);
 }
 
-UnitTest test_parse_line{[]
-{
+UnitTest test_parse_line{[] {
     {
         auto lines = parse_lines("foo\nbar\nbaz\n");
         kak_assert(lines.eolformat == EolFormat::Lf);
@@ -641,7 +650,9 @@ UnitTest test_parse_line{[]
     }
 
     {
-        auto lines = parse_lines("\xEF\xBB\xBF" "foo\nbar\r\nbaz");
+        auto lines = parse_lines(
+            "\xEF\xBB\xBF"
+            "foo\nbar\r\nbaz");
         kak_assert(lines.eolformat == EolFormat::Lf);
         kak_assert(lines.bom == ByteOrderMark::Utf8);
         kak_assert(lines.lines.size() == 3);
@@ -661,11 +672,11 @@ UnitTest test_parse_line{[]
     }
 }};
 
-UnitTest test_buffer{[]()
-{
+UnitTest test_buffer{[]() {
     Buffer empty_buffer("empty", Buffer::Flags::None, {});
 
-    Buffer buffer("test", Buffer::Flags::None, "allo ?\nmais que fais la police\n hein ?\n youpi\n");
+    Buffer buffer("test", Buffer::Flags::None,
+                  "allo ?\nmais que fais la police\n hein ?\n youpi\n");
     kak_assert(buffer.line_count() == 4);
 
     BufferIterator pos = buffer.begin();
@@ -684,31 +695,35 @@ UnitTest test_buffer{[]()
     pos2 -= 9;
     kak_assert(*pos2 == '?');
 
-    String str = buffer.string({ 4, 1 }, buffer.next({ 4, 5 }));
+    String str = buffer.string({4, 1}, buffer.next({4, 5}));
     kak_assert(str == "youpi");
 
     // check insert at end behaviour: auto add end of line if necessary
-    pos = buffer.end()-1;
+    pos = buffer.end() - 1;
     buffer.insert(pos.coord(), "tchou");
-    kak_assert(buffer.string(pos.coord(), buffer.end_coord()) == StringView{"tchou\n"});
+    kak_assert(buffer.string(pos.coord(), buffer.end_coord()) ==
+               StringView{"tchou\n"});
 
-    pos = buffer.end()-1;
+    pos = buffer.end() - 1;
     buffer.insert(buffer.end_coord(), "kanaky\n");
-    kak_assert(buffer.string((pos+1).coord(), buffer.end_coord()) == StringView{"kanaky\n"});
+    kak_assert(buffer.string((pos + 1).coord(), buffer.end_coord()) ==
+               StringView{"kanaky\n"});
 
     buffer.commit_undo_group();
-    buffer.erase((pos+1).coord(), buffer.end_coord());
+    buffer.erase((pos + 1).coord(), buffer.end_coord());
     buffer.insert(buffer.end_coord(), "mutch\n");
     buffer.commit_undo_group();
     buffer.undo();
-    kak_assert(buffer.string(buffer.advance(buffer.end_coord(), -7), buffer.end_coord()) == StringView{"kanaky\n"});
+    kak_assert(buffer.string(buffer.advance(buffer.end_coord(), -7),
+                             buffer.end_coord()) == StringView{"kanaky\n"});
     buffer.redo();
-    kak_assert(buffer.string(buffer.advance(buffer.end_coord(), -6), buffer.end_coord()) == StringView{"mutch\n"});
+    kak_assert(buffer.string(buffer.advance(buffer.end_coord(), -6),
+                             buffer.end_coord()) == StringView{"mutch\n"});
 }};
 
-UnitTest test_undo{[]()
-{
-    Buffer buffer("test", Buffer::Flags::None, "allo ?\nmais que fais la police\n hein ?\n youpi\n");
+UnitTest test_undo{[]() {
+    Buffer buffer("test", Buffer::Flags::None,
+                  "allo ?\nmais que fais la police\n hein ?\n youpi\n");
     auto pos = buffer.insert(buffer.end_coord(), "kanaky\n");
     buffer.erase(pos, buffer.end_coord());
     buffer.insert(2_line, "tchou\n");
@@ -725,5 +740,4 @@ UnitTest test_undo{[]()
     kak_assert(buffer[2_line] == " hein ?\n");
     kak_assert(buffer[3_line] == " youpi\n");
 }};
-
 }

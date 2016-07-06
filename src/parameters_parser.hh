@@ -1,16 +1,15 @@
 #ifndef parameters_parser_hh_INCLUDED
 #define parameters_parser_hh_INCLUDED
 
-#include "exception.hh"
-#include "id_map.hh"
 #include "array_view.hh"
+#include "exception.hh"
 #include "flags.hh"
+#include "id_map.hh"
 #include "optional.hh"
 #include "string.hh"
 
 namespace Kakoune
 {
-
 using ParameterList = ConstArrayView<String>;
 
 struct parameter_error : public runtime_error
@@ -21,13 +20,17 @@ struct parameter_error : public runtime_error
 struct unknown_option : public parameter_error
 {
     unknown_option(StringView name)
-        : parameter_error(format("unknown option '{}'", name)) {}
+        : parameter_error(format("unknown option '{}'", name))
+    {
+    }
 };
 
-struct missing_option_value: public parameter_error
+struct missing_option_value : public parameter_error
 {
     missing_option_value(StringView name)
-        : parameter_error(format("missing value for option '{}'", name)) {}
+        : parameter_error(format("missing value for option '{}'", name))
+    {
+    }
 };
 
 struct wrong_argument_count : public parameter_error
@@ -43,7 +46,7 @@ struct SwitchDesc
 
 using SwitchMap = IdMap<SwitchDesc, MemoryDomain::Commands>;
 
-String generate_switches_doc(const SwitchMap& opts);
+String generate_switches_doc(const SwitchMap &opts);
 
 struct ParameterDesc
 {
@@ -57,8 +60,12 @@ struct ParameterDesc
     ParameterDesc() = default;
     ParameterDesc(SwitchMap switches, Flags flags = Flags::None,
                   size_t min_positionals = 0, size_t max_positionals = -1)
-        : switches(std::move(switches)), flags(flags),
-          min_positionals(min_positionals), max_positionals(max_positionals) {}
+        : switches(std::move(switches)),
+          flags(flags),
+          min_positionals(min_positionals),
+          max_positionals(max_positionals)
+    {
+    }
 
     SwitchMap switches;
     Flags flags = Flags::None;
@@ -66,7 +73,9 @@ struct ParameterDesc
     size_t max_positionals = -1;
 };
 
-template<> struct WithBitOps<ParameterDesc::Flags> : std::true_type {};
+template <> struct WithBitOps<ParameterDesc::Flags> : std::true_type
+{
+};
 
 // ParametersParser provides tools to parse command parameters.
 // There are 3 types of parameters:
@@ -78,7 +87,7 @@ struct ParametersParser
     // the options defines named options, if they map to true, then
     // they are understood as string options, else they are understood as
     // boolean option.
-    ParametersParser(ParameterList params, const ParameterDesc& desc);
+    ParametersParser(ParameterList params, const ParameterDesc &desc);
 
     // Return a valid optional if the switch was given, with
     // a non empty StringView value if the switch took an argument.
@@ -86,50 +95,61 @@ struct ParametersParser
 
     struct iterator : std::iterator<std::forward_iterator_tag, String>
     {
-        iterator(const ParametersParser& parser, size_t index)
-            : m_parser(parser), m_index(index) {}
+        iterator(const ParametersParser &parser, size_t index)
+            : m_parser(parser), m_index(index)
+        {
+        }
 
-        const String& operator*() const { return m_parser[m_index]; }
-        const String* operator->() const { return &m_parser[m_index]; }
+        const String &operator*() const { return m_parser[m_index]; }
+        const String *operator->() const { return &m_parser[m_index]; }
+        iterator &operator++()
+        {
+            ++m_index;
+            return *this;
+        }
+        iterator operator++(int)
+        {
+            auto copy = *this;
+            ++m_index;
+            return copy;
+        }
 
-        iterator& operator++() { ++m_index; return *this; }
-        iterator operator++(int) { auto copy = *this; ++m_index; return copy; }
-
-        bool operator==(const iterator& other) const
+        bool operator==(const iterator &other) const
         {
             kak_assert(&m_parser == &other.m_parser);
             return m_index == other.m_index;
         }
 
-        bool operator!=(const iterator& other) const
+        bool operator!=(const iterator &other) const
         {
-            return not (*this == other);
+            return not(*this == other);
         }
 
-    private:
-        const ParametersParser& m_parser;
-        size_t                  m_index;
+       private:
+        const ParametersParser &m_parser;
+        size_t m_index;
     };
 
     // positional parameters count
     size_t positional_count() const { return m_positional_indices.size(); }
-
     // access positional parameter by index
-    const String& operator[] (size_t index) const
+    const String &operator[](size_t index) const
     {
         kak_assert(index < positional_count());
         return m_params[m_positional_indices[index]];
     }
 
     iterator begin() const { return iterator(*this, 0); }
-    iterator end() const { return iterator(*this, m_positional_indices.size()); }
+    iterator end() const
+    {
+        return iterator(*this, m_positional_indices.size());
+    }
 
-private:
+   private:
     ParameterList m_params;
     Vector<size_t, MemoryDomain::Commands> m_positional_indices;
-    const ParameterDesc& m_desc;
+    const ParameterDesc &m_desc;
 };
-
 }
 
-#endif // parameters_parser_hh_INCLUDED
+#endif  // parameters_parser_hh_INCLUDED

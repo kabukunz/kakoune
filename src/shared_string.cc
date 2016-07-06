@@ -3,7 +3,6 @@
 
 namespace Kakoune
 {
-
 StringDataPtr StringRegistry::intern(StringView str)
 {
     auto it = m_strings.find(str);
@@ -17,7 +16,7 @@ StringDataPtr StringRegistry::intern(StringView str)
 
 void StringRegistry::purge_unused()
 {
-    for (auto it = m_strings.begin(); it != m_strings.end(); )
+    for (auto it = m_strings.begin(); it != m_strings.end();)
     {
         if (it->second->refcount == 1)
             it = m_strings.erase(it);
@@ -32,13 +31,14 @@ void StringRegistry::debug_stats() const
     size_t total_refcount = 0;
     size_t total_size = 0;
     size_t count = m_strings.size();
-    for (auto& st : m_strings)
+    for (auto &st : m_strings)
     {
         total_refcount += st.second->refcount - 1;
         total_size += (int)st.second->length;
     }
-    write_to_debug_buffer(format("  data size: {}, mean: {}", total_size, (float)total_size/count));
-    write_to_debug_buffer(format("  refcounts: {}, mean: {}", total_refcount, (float)total_refcount/count));
+    write_to_debug_buffer(format("  data size: {}, mean: {}", total_size,
+                                 (float)total_size / count));
+    write_to_debug_buffer(format("  refcounts: {}, mean: {}", total_refcount,
+                                 (float)total_refcount / count));
 }
-
 }

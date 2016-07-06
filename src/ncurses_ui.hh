@@ -1,54 +1,50 @@
 #ifndef ncurses_hh_INCLUDED
 #define ncurses_hh_INCLUDED
 
+#include "array_view.hh"
 #include "coord.hh"
 #include "event_manager.hh"
 #include "face.hh"
-#include "user_interface.hh"
-#include "array_view.hh"
 #include "unordered_map.hh"
+#include "user_interface.hh"
 
 namespace Kakoune
 {
-
 struct NCursesWin;
 
 class NCursesUI : public UserInterface
 {
-public:
+   public:
     NCursesUI();
     ~NCursesUI();
 
-    NCursesUI(const NCursesUI&) = delete;
-    NCursesUI& operator=(const NCursesUI&) = delete;
+    NCursesUI(const NCursesUI &) = delete;
+    NCursesUI &operator=(const NCursesUI &) = delete;
 
-    void draw(const DisplayBuffer& display_buffer,
-              const Face& default_face,
-              const Face& padding_face) override;
+    void draw(const DisplayBuffer &display_buffer, const Face &default_face,
+              const Face &padding_face) override;
 
-    void draw_status(const DisplayLine& status_line,
-                     const DisplayLine& mode_line,
-                     const Face& default_face) override;
+    void draw_status(const DisplayLine &status_line,
+                     const DisplayLine &mode_line,
+                     const Face &default_face) override;
 
     bool is_key_available() override;
-    Key  get_key() override;
+    Key get_key() override;
 
-    void menu_show(ConstArrayView<DisplayLine> items,
-                   CharCoord anchor, Face fg, Face bg,
-                   MenuStyle style) override;
+    void menu_show(ConstArrayView<DisplayLine> items, CharCoord anchor, Face fg,
+                   Face bg, MenuStyle style) override;
     void menu_select(int selected) override;
     void menu_hide() override;
 
-    void info_show(StringView title, StringView content,
-                   CharCoord anchor, Face face,
-                   InfoStyle style) override;
+    void info_show(StringView title, StringView content, CharCoord anchor,
+                   Face face, InfoStyle style) override;
     void info_hide() override;
 
     void refresh(bool force) override;
 
     void set_input_callback(InputCallback callback) override;
 
-    void set_ui_options(const Options& options) override;
+    void set_ui_options(const Options &options) override;
 
     CharCoord dimensions() override;
 
@@ -59,18 +55,19 @@ public:
         CharCoord pos;
         CharCoord size;
     };
-private:
+
+   private:
     void check_resize(bool force = false);
     void redraw();
 
     int get_color(Color color);
-    int get_color_pair(const Face& face);
-    void set_face(NCursesWin* window, Face face, const Face& default_face);
-    void draw_line(NCursesWin* window, const DisplayLine& line,
+    int get_color_pair(const Face &face);
+    void set_face(NCursesWin *window, Face face, const Face &default_face);
+    void draw_line(NCursesWin *window, const DisplayLine &line,
                    CharCount col_index, CharCount max_column,
-                   const Face& default_face);
+                   const Face &default_face);
 
-    NCursesWin* m_window = nullptr;
+    NCursesWin *m_window = nullptr;
 
     CharCoord m_dimensions;
 
@@ -81,16 +78,15 @@ private:
 
     struct Window : Rect
     {
-        void create(const CharCoord& pos, const CharCoord& size);
+        void create(const CharCoord &pos, const CharCoord &size);
         void destroy();
         void refresh();
 
         explicit operator bool() const { return win; }
-
-        NCursesWin* win = nullptr;
+        NCursesWin *win = nullptr;
     };
 
-    void mark_dirty(const Window& win);
+    void mark_dirty(const Window &win);
 
     struct Menu : Window
     {
@@ -115,7 +111,7 @@ private:
         InfoStyle style;
     } m_info;
 
-    FDWatcher     m_stdin_watcher;
+    FDWatcher m_stdin_watcher;
     InputCallback m_input_callback;
 
     bool m_status_on_top = false;
@@ -131,7 +127,6 @@ private:
 
     bool m_dirty = false;
 };
-
 }
 
-#endif // ncurses_hh_INCLUDED
+#endif  // ncurses_hh_INCLUDED

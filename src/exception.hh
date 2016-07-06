@@ -5,7 +5,6 @@
 
 namespace Kakoune
 {
-
 struct exception
 {
     virtual ~exception() {}
@@ -14,19 +13,15 @@ struct exception
 
 struct runtime_error : exception
 {
-    runtime_error(String what)
-        : m_what(std::move(what)) {}
-
+    runtime_error(String what) : m_what(std::move(what)) {}
     StringView what() const override { return m_what; }
-
-private:
+   private:
     String m_what;
 };
 
 struct logic_error : exception
 {
 };
-
 }
 
-#endif // exception_hh_INCLUDED
+#endif  // exception_hh_INCLUDED

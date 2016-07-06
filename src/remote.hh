@@ -11,14 +11,16 @@
 
 namespace Kakoune
 {
-
-struct peer_disconnected {};
+struct peer_disconnected
+{
+};
 
 struct connection_failed : runtime_error
 {
     connection_failed(StringView filename)
         : runtime_error{format("connect to {} failed", filename)}
-    {}
+    {
+    }
 };
 
 class FDWatcher;
@@ -27,17 +29,17 @@ class FDWatcher;
 // and a user interface running on the local process.
 class RemoteClient
 {
-public:
-    RemoteClient(StringView session, std::unique_ptr<UserInterface>&& ui,
-                 const EnvVarMap& env_vars, StringView init_command);
+   public:
+    RemoteClient(StringView session, std::unique_ptr<UserInterface> &&ui,
+                 const EnvVarMap &env_vars, StringView init_command);
 
-private:
+   private:
     void process_available_messages();
     void process_next_message();
     void write_next_key();
 
     std::unique_ptr<UserInterface> m_ui;
-    std::unique_ptr<FDWatcher>     m_socket_watcher;
+    std::unique_ptr<FDWatcher> m_socket_watcher;
 };
 
 void send_command(StringView session, StringView command);
@@ -46,13 +48,12 @@ struct Server : public Singleton<Server>
 {
     Server(String session_name);
     ~Server();
-    const String& session() const { return m_session; }
-
+    const String &session() const { return m_session; }
     void close_session(bool do_unlink = true);
 
-private:
+   private:
     class Accepter;
-    void remove_accepter(Accepter* accepter);
+    void remove_accepter(Accepter *accepter);
 
     String m_session;
     std::unique_ptr<FDWatcher> m_listener;
@@ -60,7 +61,6 @@ private:
 };
 
 bool check_session(StringView session);
-
 }
 
-#endif // remote_hh_INCLUDED
+#endif  // remote_hh_INCLUDED

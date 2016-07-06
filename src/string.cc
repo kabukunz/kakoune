@@ -1,23 +1,21 @@
 #include "string.hh"
 
-#include "exception.hh"
 #include "containers.hh"
-#include "utf8_iterator.hh"
+#include "exception.hh"
 #include "unit_tests.hh"
+#include "utf8_iterator.hh"
 
 #include <cstdio>
 
 namespace Kakoune
 {
-
-String::Data::Data(const char* data, size_t size, size_t capacity)
+String::Data::Data(const char *data, size_t size, size_t capacity)
 {
     if (capacity > Short::capacity)
     {
-        if (capacity & 1)
-            ++capacity;
+        if (capacity & 1) ++capacity;
 
-        l.ptr = Alloc{}.allocate(capacity+1);
+        l.ptr = Alloc{}.allocate(capacity + 1);
         l.size = size;
         l.capacity = capacity;
 
@@ -28,7 +26,7 @@ String::Data::Data(const char* data, size_t size, size_t capacity)
         set_short(data, size);
 }
 
-String::Data::Data(Data&& other) noexcept
+String::Data::Data(Data &&other) noexcept
 {
     if (other.is_long())
     {
@@ -39,17 +37,17 @@ String::Data::Data(Data&& other) noexcept
         s = other.s;
 }
 
-String::Data& String::Data::operator=(const Data& other)
+String::Data &String::Data::operator=(const Data &other)
 {
     const size_t new_size = other.size();
     reserve<false>(new_size);
-    memcpy(data(), other.data(), new_size+1);
+    memcpy(data(), other.data(), new_size + 1);
     set_size(new_size);
 
     return *this;
 }
 
-String::Data& String::Data::operator=(Data&& other) noexcept
+String::Data &String::Data::operator=(Data &&other) noexcept
 {
     if (other.is_long())
     {
@@ -62,19 +60,16 @@ String::Data& String::Data::operator=(Data&& other) noexcept
     return *this;
 }
 
-template<bool copy>
-void String::Data::reserve(size_t new_capacity)
+template <bool copy> void String::Data::reserve(size_t new_capacity)
 {
-    if (new_capacity <= capacity())
-        return;
+    if (new_capacity <= capacity()) return;
 
-    if (is_long())
-        new_capacity = std::max(l.capacity * 2, new_capacity);
+    if (is_long()) new_capacity = std::max(l.capacity * 2, new_capacity);
 
-    char* new_ptr = Alloc{}.allocate(new_capacity+1);
+    char *new_ptr = Alloc{}.allocate(new_capacity + 1);
     if (copy)
     {
-        memcpy(new_ptr, data(), size()+1);
+        memcpy(new_ptr, data(), size() + 1);
         l.size = size();
     }
     release();
@@ -92,7 +87,7 @@ void String::Data::force_size(size_t new_size)
     set_size(new_size);
 }
 
-void String::Data::append(const char* str, size_t len)
+void String::Data::append(const char *str, size_t len)
 {
     const size_t new_size = size() + len;
     reserve(new_size);
@@ -110,8 +105,7 @@ void String::Data::clear()
 
 void String::Data::release()
 {
-    if (is_long())
-        Alloc{}.deallocate(l.ptr, l.capacity+1);
+    if (is_long()) Alloc{}.deallocate(l.ptr, l.capacity + 1);
 }
 
 void String::resize(ByteCount size, char c)
@@ -124,8 +118,7 @@ void String::resize(ByteCount size, char c)
     {
         m_data.reserve(target_size);
         m_data.set_size(target_size);
-        for (auto i = current_size; i < target_size; ++i)
-            m_data.data()[i] = c;
+        for (auto i = current_size; i < target_size; ++i) m_data.data()[i] = c;
     }
 }
 
@@ -137,7 +130,7 @@ void String::Data::set_size(size_t size)
         s.size = (size << 1) | 1;
 }
 
-void String::Data::set_short(const char* data, size_t size)
+void String::Data::set_short(const char *data, size_t size)
 {
     s.size = (size << 1) | 1;
     memcpy(s.string, data, size);
@@ -154,13 +147,13 @@ Vector<String> split(StringView str, char separator, char escape)
     while (it != str.end())
     {
         res.emplace_back();
-        String& element = res.back();
+        String &element = res.back();
         while (it != str.end())
         {
             auto c = *it;
-            if (c == escape and it + 1 != str.end() and *(it+1) == separator)
+            if (c == escape and it + 1 != str.end() and *(it + 1) == separator)
             {
-                element += StringView{start, it+1};
+                element += StringView{start, it + 1};
                 element.back() = separator;
                 it += 2;
                 start = it;
@@ -176,16 +169,14 @@ Vector<String> split(StringView str, char separator, char escape)
                 ++it;
         }
     }
-    if (start != str.end())
-        res.back() += StringView{start, str.end()};
+    if (start != str.end()) res.back() += StringView{start, str.end()};
     return res;
 }
 
 Vector<StringView> split(StringView str, char separator)
 {
     Vector<StringView> res;
-    if (str.empty())
-        return res;
+    if (str.empty()) return res;
 
     auto beg = str.begin();
     for (auto it = beg; it != str.end(); ++it)
@@ -204,15 +195,16 @@ String escape(StringView str, StringView characters, char escape)
 {
     String res;
     res.reserve(str.length());
-    for (auto it = str.begin(), end = str.end(); it != end; )
+    for (auto it = str.begin(), end = str.end(); it != end;)
     {
-        auto next = std::find_if(it, end, [&characters](char c) { return contains(characters, c); });
+        auto next = std::find_if(
+            it, end, [&characters](char c) { return contains(characters, c); });
         if (next != end)
         {
-            res += StringView{it, next+1};
+            res += StringView{it, next + 1};
             res.back() = escape;
             res += *next;
-            it = next+1;
+            it = next + 1;
         }
         else
         {
@@ -227,13 +219,14 @@ String unescape(StringView str, StringView characters, char escape)
 {
     String res;
     res.reserve(str.length());
-    for (auto it = str.begin(), end = str.end(); it != end; )
+    for (auto it = str.begin(), end = str.end(); it != end;)
     {
         auto next = std::find(it, end, escape);
-        if (next != end and next+1 != end and contains(characters, *(next+1)))
+        if (next != end and next + 1 != end and
+            contains(characters, *(next + 1)))
         {
-            res += StringView{it, next+1};
-            res.back() = *(next+1);
+            res += StringView{it, next + 1};
+            res.back() = *(next + 1);
             it = next + 2;
         }
         else
@@ -252,8 +245,7 @@ String indent(StringView str, StringView indent)
     bool was_eol = true;
     for (ByteCount i = 0; i < str.length(); ++i)
     {
-        if (was_eol)
-            res += indent;
+        if (was_eol) res += indent;
         res += str[i];
         was_eol = is_eol(str[i]);
     }
@@ -263,12 +255,11 @@ String indent(StringView str, StringView indent)
 String replace(StringView str, StringView substr, StringView replacement)
 {
     String res;
-    for (auto it = str.begin(); it != str.end(); )
+    for (auto it = str.begin(); it != str.end();)
     {
         auto match = std::search(it, str.end(), substr.begin(), substr.end());
         res += StringView{it, match};
-        if (match == str.end())
-            break;
+        if (match == str.end()) break;
 
         res += replacement;
         it = match + (int)substr.length();
@@ -295,8 +286,7 @@ Optional<int> str_to_int_ifp(StringView str)
 
 int str_to_int(StringView str)
 {
-    if (auto val = str_to_int_ifp(str))
-        return *val;
+    if (auto val = str_to_int_ifp(str)) return *val;
     throw runtime_error{str + " is not a number"};
 }
 
@@ -338,7 +328,7 @@ InplaceString<23> to_string(float val)
 InplaceString<7> to_string(Codepoint c)
 {
     InplaceString<7> res;
-    char* ptr = res.m_data;
+    char *ptr = res.m_data;
     utf8::dump(ptr, c);
     res.m_length = (int)(ptr - res.m_data);
     return res;
@@ -347,14 +337,12 @@ InplaceString<7> to_string(Codepoint c)
 bool subsequence_match(StringView str, StringView subseq)
 {
     auto it = str.begin();
-    for (auto& c : subseq)
+    for (auto &c : subseq)
     {
-        if (it == str.end())
-            return false;
+        if (it == str.end()) return false;
         while (*it != c)
         {
-            if (++it == str.end())
-                return false;
+            if (++it == str.end()) return false;
         }
         ++it;
     }
@@ -365,7 +353,7 @@ String expand_tabs(StringView line, CharCount tabstop, CharCount col)
 {
     String res;
     res.reserve(line.length());
-    for (auto it = line.begin(), end = line.end(); it != end; )
+    for (auto it = line.begin(), end = line.end(); it != end;)
     {
         if (*it == '\t')
         {
@@ -387,10 +375,9 @@ String expand_tabs(StringView line, CharCount tabstop, CharCount col)
 
 Vector<StringView> wrap_lines(StringView text, CharCount max_width)
 {
-    if (max_width <= 0)
-        throw runtime_error("Invalid max width");
+    if (max_width <= 0) throw runtime_error("Invalid max width");
 
-    using Utf8It = utf8::iterator<const char*>;
+    using Utf8It = utf8::iterator<const char *>;
     Utf8It it{text.begin(), text};
     Utf8It end{text.end(), text};
     Utf8It line_begin = it;
@@ -403,13 +390,12 @@ Vector<StringView> wrap_lines(StringView text, CharCount max_width)
         if (cat == CharCategories::EndOfLine)
         {
             lines.emplace_back(line_begin.base(), it.base());
-            line_begin = it = it+1;
+            line_begin = it = it + 1;
             continue;
         }
 
-        Utf8It word_end = it+1;
-        while (word_end != end and categorize(*word_end) == cat)
-            ++word_end;
+        Utf8It word_end = it + 1;
+        while (word_end != end and categorize(*word_end) == cat) ++word_end;
 
         while (word_end > line_begin and word_end - line_begin >= max_width)
         {
@@ -420,8 +406,7 @@ Vector<StringView> wrap_lines(StringView text, CharCount max_width)
             while (line_end != end and is_horizontal_blank(*line_end))
                 ++line_end;
 
-            if (line_end != end and *line_end == '\n')
-                ++line_end;
+            if (line_end != end and *line_end == '\n') ++line_end;
 
             it = line_begin = line_end;
         }
@@ -430,13 +415,13 @@ Vector<StringView> wrap_lines(StringView text, CharCount max_width)
 
         it = word_end;
     }
-    if (line_begin != end)
-        lines.emplace_back(line_begin.base(), text.end());
+    if (line_begin != end) lines.emplace_back(line_begin.base(), text.end());
     return lines;
 }
 
-template<typename AppendFunc>
-void format_impl(StringView fmt, ArrayView<const StringView> params, AppendFunc append)
+template <typename AppendFunc>
+void format_impl(StringView fmt, ArrayView<const StringView> params,
+                 AppendFunc append)
 {
     int implicitIndex = 0;
     for (auto it = fmt.begin(), end = fmt.end(); it != end;)
@@ -447,9 +432,9 @@ void format_impl(StringView fmt, ArrayView<const StringView> params, AppendFunc 
             append(StringView{it, opening});
             break;
         }
-        else if (opening != it and *(opening-1) == '\\')
+        else if (opening != it and *(opening - 1) == '\\')
         {
-            append(StringView{it, opening-1});
+            append(StringView{it, opening - 1});
             append('{');
             it = opening + 1;
         }
@@ -463,41 +448,40 @@ void format_impl(StringView fmt, ArrayView<const StringView> params, AppendFunc 
             if (closing == opening + 1)
                 index = implicitIndex;
             else
-                index = str_to_int({opening+1, closing});
+                index = str_to_int({opening + 1, closing});
 
             if (index >= params.size())
                 throw runtime_error("Format string parameter index too big");
 
             append(params[index]);
-            implicitIndex = index+1;
-            it = closing+1;
+            implicitIndex = index + 1;
+            it = closing + 1;
         }
     }
 }
 
-StringView format_to(ArrayView<char> buffer, StringView fmt, ArrayView<const StringView> params)
+StringView format_to(ArrayView<char> buffer, StringView fmt,
+                     ArrayView<const StringView> params)
 {
-    char* ptr = buffer.begin();
-    const char* end = buffer.end();
+    char *ptr = buffer.begin();
+    const char *end = buffer.end();
     format_impl(fmt, params, [&](StringView s) mutable {
         for (auto c : s)
         {
-            if (ptr == end)
-                throw runtime_error("buffer is too small");
+            if (ptr == end) throw runtime_error("buffer is too small");
             *ptr++ = c;
         }
     });
-    if (ptr == end)
-        throw runtime_error("buffer is too small");
+    if (ptr == end) throw runtime_error("buffer is too small");
     *ptr = 0;
 
-    return { buffer.begin(), ptr };
+    return {buffer.begin(), ptr};
 }
 
 String format(StringView fmt, ArrayView<const StringView> params)
 {
     ByteCount size = fmt.length();
-    for (auto& s : params) size += s.length();
+    for (auto &s : params) size += s.length();
     String res;
     res.reserve(size);
 
@@ -505,18 +489,19 @@ String format(StringView fmt, ArrayView<const StringView> params)
     return res;
 }
 
-UnitTest test_string{[]()
-{
+UnitTest test_string{[]() {
     kak_assert(String("youpi ") + "matin" == "youpi matin");
 
-    Vector<String> splited = split("youpi:matin::tchou\\:kanaky:hihi\\:", ':', '\\');
+    Vector<String> splited =
+        split("youpi:matin::tchou\\:kanaky:hihi\\:", ':', '\\');
     kak_assert(splited[0] == "youpi");
     kak_assert(splited[1] == "matin");
     kak_assert(splited[2] == "");
     kak_assert(splited[3] == "tchou:kanaky");
     kak_assert(splited[4] == "hihi:");
 
-    Vector<StringView> splitedview = split("youpi:matin::tchou\\:kanaky:hihi\\:", ':');
+    Vector<StringView> splitedview =
+        split("youpi:matin::tchou\\:kanaky:hihi\\:", ':');
     kak_assert(splitedview[0] == "youpi");
     kak_assert(splitedview[1] == "matin");
     kak_assert(splitedview[2] == "");
@@ -525,7 +510,9 @@ UnitTest test_string{[]()
     kak_assert(splitedview[5] == "hihi\\");
     kak_assert(splitedview[6] == "");
 
-    Vector<StringView> wrapped = wrap_lines("wrap this paragraph\n respecting whitespaces and much_too_long_words", 16);
+    Vector<StringView> wrapped = wrap_lines(
+        "wrap this paragraph\n respecting whitespaces and much_too_long_words",
+        16);
     kak_assert(wrapped.size() == 6);
     kak_assert(wrapped[0] == "wrap this");
     kak_assert(wrapped[1] == "paragraph");
@@ -540,8 +527,10 @@ UnitTest test_string{[]()
     kak_assert(wrapped2[1] == "unknown");
     kak_assert(wrapped2[2] == "type");
 
-    kak_assert(escape("youpi:matin:tchou:", ':', '\\') == "youpi\\:matin\\:tchou\\:");
-    kak_assert(unescape("youpi\\:matin\\:tchou\\:", ':', '\\') == "youpi:matin:tchou:");
+    kak_assert(escape("youpi:matin:tchou:", ':', '\\') ==
+               "youpi\\:matin\\:tchou\\:");
+    kak_assert(unescape("youpi\\:matin\\:tchou\\:", ':', '\\') ==
+               "youpi:matin:tchou:");
 
     kak_assert(prefix_match("tchou kanaky", "tchou"));
     kak_assert(prefix_match("tchou kanaky", "tchou kanaky"));
@@ -553,7 +542,8 @@ UnitTest test_string{[]()
     kak_assert(subsequence_match("tchou kanaky", "tchou kanaky"));
     kak_assert(not subsequence_match("tchou kanaky", "tchou  kanaky"));
 
-    kak_assert(format("Youhou {1} {} {0} \\{}", 10, "hehe", 5) == "Youhou hehe 5 10 {}");
+    kak_assert(format("Youhou {1} {} {0} \\{}", 10, "hehe", 5) ==
+               "Youhou hehe 5 10 {}");
 
     char buffer[20];
     kak_assert(format_to(buffer, "Hey {}", 15) == "Hey 15");
@@ -566,5 +556,4 @@ UnitTest test_string{[]()
 
     kak_assert(replace("tchou/tcha/tchi", "/", "!!") == "tchou!!tcha!!tchi");
 }};
-
 }

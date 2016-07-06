@@ -7,7 +7,6 @@
 
 namespace Kakoune
 {
-
 class Context;
 
 struct NormalParams
@@ -20,12 +19,11 @@ struct NormalCmdDesc
 {
     Key key;
     StringView docstring;
-    void (*func)(Context& context, NormalParams params);
+    void (*func)(Context &context, NormalParams params);
 };
 
 using KeyMap = const ArrayView<NormalCmdDesc>;
 extern KeyMap keymap;
-
 }
 
-#endif // normal_hh_INCLUDED
+#endif  // normal_hh_INCLUDED

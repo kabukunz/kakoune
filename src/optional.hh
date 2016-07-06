@@ -5,39 +5,32 @@
 
 namespace Kakoune
 {
-
-template<typename T>
-struct Optional
+template <typename T> struct Optional
 {
-public:
+   public:
     constexpr Optional() : m_valid(false) {}
-    Optional(const T& other) : m_valid(true) { new (&m_value) T(other); }
-    Optional(T&& other) : m_valid(true) { new (&m_value) T(std::move(other)); }
-
-    Optional(const Optional& other)
-        : m_valid(other.m_valid)
+    Optional(const T &other) : m_valid(true) { new (&m_value) T(other); }
+    Optional(T &&other) : m_valid(true) { new (&m_value) T(std::move(other)); }
+    Optional(const Optional &other) : m_valid(other.m_valid)
     {
-        if (m_valid)
-            new (&m_value) T(other.m_value);
+        if (m_valid) new (&m_value) T(other.m_value);
     }
 
-    Optional(Optional&& other)
-        noexcept(noexcept(new (nullptr) T(std::move(other.m_value))))
+    Optional(Optional &&other) noexcept(
+        noexcept(new (nullptr) T(std::move(other.m_value))))
         : m_valid(other.m_valid)
     {
-        if (m_valid)
-            new (&m_value) T(std::move(other.m_value));
+        if (m_valid) new (&m_value) T(std::move(other.m_value));
     }
 
-    Optional& operator=(const Optional& other)
+    Optional &operator=(const Optional &other)
     {
         destruct_ifn();
-        if ((m_valid = other.m_valid))
-            new (&m_value) T(other.m_value);
+        if ((m_valid = other.m_valid)) new (&m_value) T(other.m_value);
         return *this;
     }
 
-    Optional& operator=(Optional&& other)
+    Optional &operator=(Optional &&other)
     {
         destruct_ifn();
         if ((m_valid = other.m_valid))
@@ -46,52 +39,57 @@ public:
     }
 
     ~Optional() { destruct_ifn(); }
-
     constexpr explicit operator bool() const noexcept { return m_valid; }
-
-    bool operator==(const Optional& other) const
+    bool operator==(const Optional &other) const
     {
         return m_valid == other.m_valid and
                (not m_valid or m_value == other.m_value);
     }
 
-    template<typename... Args>
-    void emplace(Args&&... args)
+    template <typename... Args> void emplace(Args &&... args)
     {
         destruct_ifn();
         new (&m_value) T{std::forward<Args>(args)...};
         m_valid = true;
     }
 
-    T& operator*()
+    T &operator*()
     {
         kak_assert(m_valid);
         return m_value;
     }
-    const T& operator*() const { return *const_cast<Optional&>(*this); }
-
-    T* operator->()
+    const T &operator*() const { return *const_cast<Optional &>(*this); }
+    T *operator->()
     {
         kak_assert(m_valid);
         return &m_value;
     }
-    const T* operator->() const { return const_cast<Optional&>(*this).operator->(); }
+    const T *operator->() const
+    {
+        return const_cast<Optional &>(*this).operator->();
+    }
 
-    template<typename U>
-    T value_or(U&& fallback) const { return m_valid ? m_value : T{fallback}; }
+    template <typename U> T value_or(U &&fallback) const
+    {
+        return m_valid ? m_value : T{fallback};
+    }
 
-private:
-    void destruct_ifn() { if (m_valid) m_value.~T(); }
+   private:
+    void destruct_ifn()
+    {
+        if (m_valid) m_value.~T();
+    }
 
-    struct Empty {};
+    struct Empty
+    {
+    };
     union
     {
-        Empty m_empty; // disable default construction of value
+        Empty m_empty;  // disable default construction of value
         T m_value;
     };
     bool m_valid;
 };
-
 }
 
-#endif // optional_hh_INCLUDED
+#endif  // optional_hh_INCLUDED
